@@ -1,16 +1,21 @@
 """Chaîne automatique lancée par GitHub Actions : collecte, enrichissement, prédiction.
 
-1. Collecte les départs de BOD via AviationStack (plan gratuit : 100 appels par mois,
-   compteur dans data/api_usage.json pour ne jamais dépasser).
-2. Fusionne avec l'historique data/clean/flights.csv.
-3. Ajoute la météo prévue (Open-Meteo), les vacances scolaires et le statut Schengen.
-4. Réentraîne le modèle et prédit les vols du jour et du lendemain.
-5. Écrit data/predictions.json (lu par le site) et data/predictions_log.csv (historique
-   des prédictions, pour comparer ensuite avec les retards réels).
+Deux sources :
+  - airport : tableau des départs du jour de l'aéroport (toutes les heures, sans quota).
+    Donne le programme du jour, les annulations et les retards annoncés.
+  - aviationstack : une fois par soir, pour les heures réelles de départ (plan gratuit :
+    100 appels par mois, compteur dans data/api_usage.json pour ne jamais dépasser).
+
+Ensuite : fusion dans data/clean/flights.csv, météo prévue (Open-Meteo), vacances scolaires,
+statut Schengen, réentraînement du modèle, prédiction des vols du jour et du lendemain
+(programme du lendemain estimé à partir du même jour de la semaine précédente).
+Sorties : data/predictions.json (lu par le site) et data/predictions_log.csv (historique
+des prédictions, pour les comparer ensuite aux retards réels).
 
 Usage :
-  AVIATIONSTACK_KEY=... python3 scripts/pipeline.py
-  python3 scripts/pipeline.py --from-file reponse.json   (rejoue une réponse enregistrée, sans appel)
+  python3 scripts/pipeline.py --source airport
+  AVIATIONSTACK_KEY=... python3 scripts/pipeline.py --source aviationstack
+  python3 scripts/pipeline.py --from-file reponse.json   (rejoue une réponse AviationStack enregistrée)
   python3 scripts/pipeline.py --no-collect               (recalcule seulement les prédictions)
 """
 import json
@@ -19,12 +24,14 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections import Counter
 from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import airport
 import model
-from common import (CLEAN, DATA, FLIGHT_FIELDS, LAT, LON, delay_between, delay_flag, hhmm, mark_primary,
-                    read_csv, weather_label, write_csv)
+from common import (CLEAN, DATA, FLIGHT_FIELDS, LAT, LON, delay_between, delay_flag, hhmm, is_commercial,
+                    mark_primary, read_csv, weather_label, write_csv)
 
 PARIS = ZoneInfo("Europe/Paris")
 FLIGHTS_CSV = CLEAN / "flights.csv"
@@ -34,7 +41,8 @@ PREDICTIONS_LOG = DATA / "predictions_log.csv"
 HOLIDAYS_JSON = DATA / "ref" / "school_holidays_zone_a.json"
 
 MONTHLY_QUOTA = 100
-RUNS_PER_DAY = 3  # doit correspondre au cron de .github/workflows/pipeline.yml
+AVIATIONSTACK_RUNS_PER_DAY = 1  # doit correspondre au cron de .github/workflows/pipeline.yml
+MAX_PAGES_PER_RUN = 3           # 3 pages x 31 jours = 93 appels maximum
 API_URL = "https://api.aviationstack.com/v1/flights"
 
 LOG_FIELDS = ["date", "flight_iata", "std", "predicted_at", "prediction_type", "probabilite_retard", "risk_level"]
@@ -43,6 +51,7 @@ JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"
 # Seuils de probabilité (retard ≥ 15 min) pour les 4 niveaux affichés sur le site.
 RISK_LEVELS = [(0.35, "green", "Faible risque de retard"), (0.50, "yellow", "Retard possible"),
                (0.65, "orange", "Retard probable"), (1.01, "red", "Retard très probable")]
+ANNOUNCED_PROBA = 0.95  # retard de 15 min ou plus annoncé par l'aéroport
 
 
 def now_paris():
@@ -57,6 +66,22 @@ def get_json(url, timeout=60):
         return json.load(r)
 
 
+def departure_time(f):
+    return datetime.strptime(f"{f['date']} {f['std']}", "%Y-%m-%d %H:%M").replace(tzinfo=PARIS)
+
+
+def announced_delay(f):
+    """Retard annoncé par l'aéroport (« Prévu à HH:MM »), en minutes, ou None."""
+    return delay_between(f["std"], f["est_departure"]) if f.get("est_departure") else None
+
+
+def has_departed(f, now):
+    if f["atd"] or f.get("airport_status", "").lower().startswith("décoll"):
+        return True
+    expected = departure_time(f) + timedelta(minutes=max(announced_delay(f) or 0, 0))
+    return expected <= now
+
+
 # ── 1. Collecte ────────────────────────────────────────
 
 def load_usage(month):
@@ -69,10 +94,10 @@ def save_usage(usage):
 
 
 def calls_reserved(now):
-    """Appels à garder pour les passages restants du mois (un par passage)."""
+    """Appels à garder pour les passages restants du mois (une page par passage)."""
     next_month = (now.replace(day=28) + timedelta(days=4)).replace(day=1)
     days_left = (next_month.date() - now.date()).days - 1
-    return days_left * RUNS_PER_DAY
+    return days_left * AVIATIONSTACK_RUNS_PER_DAY
 
 
 def fetch_aviationstack(now):
@@ -82,13 +107,12 @@ def fetch_aviationstack(now):
     month = now.strftime("%Y-%m")
     usage, used = load_usage(month)
     records, offset = [], 0
-    while True:
+    for page_no in range(1, MAX_PAGES_PER_RUN + 1):
         # Première page : il suffit qu'il reste un appel. Pages suivantes : seulement si
         # elles ne mangent pas les appels réservés aux passages restants du mois.
-        needed = 1 if offset == 0 else 1 + calls_reserved(now)
+        needed = 1 if page_no == 1 else 1 + calls_reserved(now)
         if used + needed > MONTHLY_QUOTA:
-            print(f"Quota : {used}/{MONTHLY_QUOTA} appels utilisés ce mois, collecte "
-                  f"{'annulée' if offset == 0 else 'limitée à la première page'}.")
+            print(f"Quota : {used}/{MONTHLY_QUOTA} appels utilisés ce mois, page {page_no} non demandée.")
             break
         query = urllib.parse.urlencode({"access_key": key, "dep_iata": "BOD", "limit": 100, "offset": offset})
         try:
@@ -100,8 +124,11 @@ def fetch_aviationstack(now):
         save_usage(usage)
         if "error" in body:  # ne jamais afficher l'URL : elle contient la clé
             sys.exit(f"Erreur AviationStack : {body['error'].get('code')} {body['error'].get('message', '')}")
-        records += body.get("data", [])
+        data = body.get("data", [])
+        records += data
         page = body.get("pagination", {})
+        days = Counter((r.get("departure") or {}).get("scheduled", "")[:10] for r in data)
+        print(f"AviationStack page {page_no} : {len(data)} vols, total annoncé {page.get('total')}, dates {dict(days)}")
         offset += page.get("count", 0)
         if not page.get("count") or offset >= page.get("total", 0):
             break
@@ -120,7 +147,7 @@ def normalize(records, collected_at):
             continue
         shared = flight.get("codeshared")
         if shared:  # numéro commercial d'un vol opéré par une autre compagnie
-            codeshares.setdefault(shared.get("flight_iata", "").upper(), []).append(flight.get("iata") or "")
+            codeshares.setdefault((shared.get("flight_iata") or "").upper(), []).append(flight.get("iata") or "")
             continue
         std, atd = dep["scheduled"][11:16], (dep.get("actual") or "")[11:16]
         rows.append({
@@ -142,6 +169,10 @@ def flight_key(r):
     return (r["date"], ident)
 
 
+# Champs de l'aéroport qui reflètent l'état actuel : une valeur vide efface l'ancienne.
+LIVE_FIELDS = {"airport_status", "est_departure"}
+
+
 def merge(flights, new_rows):
     """Met à jour les vols connus (sans effacer une valeur par du vide) et ajoute les nouveaux."""
     index = {flight_key(f): f for f in flights}
@@ -150,12 +181,12 @@ def merge(flights, new_rows):
         f = index.get(flight_key(r))
         if f is None:
             f = {k: "" for k in FLIGHT_FIELDS}
-            f.update(first_collected_at=r["collected_at"], n_snapshots=0)
+            f.update(first_collected_at=r["collected_at"], n_snapshots=0, status="scheduled")
             flights.append(f)
             index[flight_key(r)] = f
             added += 1
         for k, v in r.items():
-            if k != "collected_at" and v != "":
+            if k != "collected_at" and (v != "" or k in LIVE_FIELDS):
                 f[k] = v
         f["n_snapshots"] = int(f["n_snapshots"] or 0) + 1
         f["last_collected_at"] = r["collected_at"]
@@ -222,15 +253,14 @@ def forecast_weather():
     return {t[:13]: {k: h[k][i] for k in h if k != "time"} for i, t in enumerate(h["time"])}
 
 
-def enrich(flights, now):
+def enrich(rows, history, now):
     """Complète météo, vacances, jour, Schengen pour les vols récents ou à venir."""
-    today = now.date()
-    recent = [f for f in flights if f["date"] >= (today - timedelta(days=2)).isoformat()]
+    recent = [f for f in rows if f["date"] >= (now.date() - timedelta(days=2)).isoformat()]
     if not recent:
         return
     weather = forecast_weather()
     periods = school_holidays()
-    schengen = {f["destination_iata"]: f["non_schengen"] for f in flights if f["non_schengen"]}
+    schengen = {f["destination_iata"]: f["non_schengen"] for f in history if f["non_schengen"]}
     for f in recent:
         d = date.fromisoformat(f["date"])
         w = weather.get(f"{f['date']}T{f['std'][:2]}")
@@ -243,10 +273,31 @@ def enrich(flights, now):
         f["school_holiday"] = holiday_status(d, periods)
         f["day_of_week"] = JOURS[d.weekday()]
         f["non_schengen"] = schengen.get(f["destination_iata"], "Non")
-        f["is_commercial"] = int(bool(f["flight_iata"]))
         if f["atd"]:
             f["delay_min"] = delay_between(f["std"], f["atd"])
             f["delay_flag"] = delay_flag(f["delay_min"])
+
+
+def estimated_schedule(flights, day):
+    """Programme estimé d'un jour à venir : les vols du même jour de la semaine précédente
+    (ou d'il y a deux semaines si la collecte manque), sauf ceux déjà connus pour ce jour.
+    Ces lignes servent seulement à prédire : elles ne sont jamais écrites dans l'historique."""
+    known = {f["flight_iata"] for f in flights if f["date"] == day.isoformat()}
+    for weeks in (1, 2):
+        ref = (day - timedelta(weeks=weeks)).isoformat()
+        source = [f for f in flights if f["date"] == ref and str(f["is_primary"]) == "1"
+                  and str(f["is_commercial"]) == "1" and f["status"] != "cancelled"]
+        if source:
+            break
+    out = []
+    for f in source:
+        if f["flight_iata"] in known:
+            continue
+        g = dict(f)
+        g.update(date=day.isoformat(), atd="", delay_min="", delay_flag="", status="scheduled",
+                 airport_status="", est_departure="", weather_temp="", estimated_schedule=True)
+        out.append(g)
+    return out
 
 
 # ── 3. Prédiction ──────────────────────────────────────
@@ -260,7 +311,9 @@ def risk(p):
 
 
 def prediction_type(f, now):
-    dep = datetime.strptime(f"{f['date']} {f['std']}", "%Y-%m-%d %H:%M").replace(tzinfo=PARIS)
+    if announced_delay(f) is not None and announced_delay(f) >= model.DELAY_THRESHOLD:
+        return "Annonce"
+    dep = departure_time(f)
     if dep.date() > now.date():
         return "J-1"
     return "T-2h" if dep - now <= timedelta(hours=2, minutes=30) else "Jour J"
@@ -282,16 +335,18 @@ def predict(flights, now):
     targets = [f for f in featured if f["date"] in (today, tomorrow)]
     out = []
     for f in targets:
-        dep = datetime.strptime(f"{f['date']} {f['std']}", "%Y-%m-%d %H:%M").replace(tzinfo=PARIS)
         key = (f["date"], f["flight_iata"])
-        if dep > now and not f["atd"]:  # on ne prédit que des vols pas encore partis
-            p = float(clf.predict_proba([f["_x"]])[0, 1])
-            lvl, _ = risk(p)
-            entry = {"date": f["date"], "flight_iata": f["flight_iata"], "std": f["std"], "predicted_at": stamp,
-                     "prediction_type": prediction_type(f, now), "probabilite_retard": round(100 * p, 1),
-                     "risk_level": lvl}
-            log.append(entry)
-            last_logged[key] = entry
+        if not has_departed(f, now):  # on ne prédit que des vols pas encore partis
+            kind = prediction_type(f, now)
+            p = ANNOUNCED_PROBA if kind == "Annonce" else float(clf.predict_proba([f["_x"]])[0, 1])
+            previous = last_logged.get(key)
+            # On n'ajoute une ligne à l'historique que si la prédiction a vraiment changé.
+            if (not previous or previous["prediction_type"] != kind
+                    or abs(float(previous["probabilite_retard"]) - 100 * p) >= 1):
+                entry = {"date": f["date"], "flight_iata": f["flight_iata"], "std": f["std"], "predicted_at": stamp,
+                         "prediction_type": kind, "probabilite_retard": round(100 * p, 1), "risk_level": risk(p)[0]}
+                log.append(entry)
+                last_logged[key] = entry
         pred = last_logged.get(key)
         if not pred:
             continue  # vol déjà parti avant notre première prédiction
@@ -301,6 +356,8 @@ def predict(flights, now):
             "date": f["date"], "flight_iata": f["flight_iata"], "airline": f["airline"],
             "destination": f["destination"], "destination_iata": f["destination_iata"], "std": f["std"],
             "status": f["status"], "atd": f["atd"], "delay_min": f["delay_min"],
+            "airport_status": f.get("airport_status", ""), "est_departure": f.get("est_departure", ""),
+            "announced_delay": announced_delay(f), "estimated_schedule": bool(f.get("estimated_schedule")),
             "weather_label": f["weather_label"], "weather_temp": f["weather_temp"],
             "weather_wind": f["weather_wind"], "weather_precip": f["weather_precip"],
             "avg_delay_flight": rounded(f["_avg_delay_flight"]), "avg_delay_airline": rounded(f["_avg_delay_airline"]),
@@ -315,25 +372,40 @@ def predict(flights, now):
                   "threshold_min": model.DELAY_THRESHOLD},
         "flights": out,
     }, indent=1, ensure_ascii=False) + "\n")
-    print(f"Prédictions : {len(out)} vols ({today} et {tomorrow}), AUC test {metrics['auc']}.")
+    days = Counter(r["date"] for r in out)
+    print(f"Prédictions : {days.get(today, 0)} vols aujourd'hui, {days.get(tomorrow, 0)} demain, AUC test {metrics['auc']}.")
 
 
 # ── Main ───────────────────────────────────────────────
 
 def main():
     now = now_paris()
+    stamp = now.strftime("%Y-%m-%d %H:%M:%S")
     flights = read_csv(FLIGHTS_CSV)
-    if "--no-collect" not in sys.argv:
-        if "--from-file" in sys.argv:
-            records = json.loads(open(sys.argv[sys.argv.index("--from-file") + 1]).read())["data"]
+    if "--from-file" in sys.argv:
+        records = json.loads(open(sys.argv[sys.argv.index("--from-file") + 1]).read())["data"]
+        merge(flights, normalize(records, stamp))
+    elif "--source" in sys.argv:
+        source = sys.argv[sys.argv.index("--source") + 1]
+        if source == "airport":
+            merge(flights, airport.fetch(flights, stamp))
+        elif source == "aviationstack":
+            merge(flights, normalize(fetch_aviationstack(now), stamp))
         else:
-            records = fetch_aviationstack(now)
-        merge(flights, normalize(records, now.strftime("%Y-%m-%d %H:%M:%S")))
-    enrich(flights, now)
+            sys.exit(f"Source inconnue : {source} (airport ou aviationstack)")
+    elif "--no-collect" not in sys.argv:
+        sys.exit("Préciser --source airport, --source aviationstack ou --no-collect.")
+    enrich(flights, flights, now)
+    for f in flights:
+        f["is_commercial"] = is_commercial(f["flight_iata"])
     mark_primary(flights)
     flights.sort(key=lambda f: (f["date"], f["std"], f["flight_iata"] or f["flight_icao"]))
     write_csv(FLIGHTS_CSV, flights, FLIGHT_FIELDS)
-    predict(flights, now)
+
+    tomorrow = now.date() + timedelta(days=1)
+    estimated = estimated_schedule(flights, tomorrow)
+    enrich(estimated, flights, now)
+    predict(flights + estimated, now)
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime
 
 from common import (CLEAN, DELAY_MAX_OK, DELAY_MIN_OK, FLIGHT_FIELDS, LAT, LON, RAW, delay_between,
-                    delay_flag, hhmm, mark_primary, read_csv, weather_label, write_csv)
+                    delay_flag, hhmm, is_commercial, mark_primary, read_csv, weather_label, write_csv)
 
 WEATHER_CACHE = RAW / "open_meteo_hourly.csv"
 WEATHER_VARS = ["temperature_2m", "precipitation", "wind_speed_10m", "wind_gusts_10m", "visibility", "weather_code"]
@@ -110,7 +110,7 @@ def clean_flights(weather):
             f["delay_min"] = ""
             f["delay_flag"] = ""
         f.update(weather_fields(weather.get(f"{f['date']}T{f['std'][:2]}")))
-        f["is_commercial"] = int(bool(f["flight_iata"]))
+        f["is_commercial"] = is_commercial(f["flight_iata"])
         flights.append(f)
 
     mark_primary(flights)

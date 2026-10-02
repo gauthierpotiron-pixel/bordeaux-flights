@@ -1,19 +1,26 @@
 # Collecte les départs de BOD, prédit les retards et publie data/predictions.json.
-# 3 passages par jour = 93 appels AviationStack maximum par mois (quota gratuit : 100).
-# Si tu changes le nombre de passages, mets à jour RUNS_PER_DAY dans scripts/pipeline.py.
+# - Toutes les heures de 05:15 à 22:15 (heure d'été ; une heure plus tôt en hiver) :
+#   tableau des départs de l'aéroport, sans quota.
+# - Une fois par soir : AviationStack pour les heures réelles de départ
+#   (3 pages maximum, soit 93 appels par mois au plus ; quota gratuit : 100).
+# Si tu ajoutes un passage AviationStack, mets à jour AVIATIONSTACK_RUNS_PER_DAY
+# dans scripts/pipeline.py.
 name: Pipeline BOD
 
 on:
   schedule:
-    - cron: "45 3 * * *"    # 05:45 à Bordeaux (04:45 en hiver) : programme de la journée
-    - cron: "45 10 * * *"   # 12:45 (11:45 en hiver) : mise à jour de l'après-midi
-    - cron: "30 20 * * *"   # 22:30 (21:30 en hiver) : retards réels de la journée
+    - cron: "15 3-20 * * *"   # aéroport, toutes les heures
+    - cron: "45 21 * * *"     # AviationStack, 23:45 l'été (22:45 l'hiver)
   workflow_dispatch:
     inputs:
-      collect:
-        description: "Appeler AviationStack (consomme 1 appel du quota mensuel)"
-        type: boolean
-        default: true
+      source:
+        description: "Source à lire"
+        type: choice
+        options:
+          - airport
+          - aviationstack
+          - aucune (recalcul seul)
+        default: airport
 
 permissions:
   contents: write
@@ -40,11 +47,15 @@ jobs:
       - name: Collecte et prédiction
         env:
           AVIATIONSTACK_KEY: ${{ secrets.AVIATIONSTACK_KEY }}
+          SCHEDULE: ${{ github.event.schedule }}
+          SOURCE: ${{ inputs.source }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.collect }}" = "false" ]; then
+          if [ "$SCHEDULE" = "45 21 * * *" ] || [ "$SOURCE" = "aviationstack" ]; then
+            python scripts/pipeline.py --source aviationstack
+          elif [ -n "$SOURCE" ] && [ "$SOURCE" != "airport" ]; then
             python scripts/pipeline.py --no-collect
           else
-            python scripts/pipeline.py
+            python scripts/pipeline.py --source airport
           fi
 
       # Toujours enregistrer, même en cas d'erreur, pour ne pas perdre le compteur d'appels.
