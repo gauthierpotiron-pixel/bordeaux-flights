@@ -1,0 +1,94 @@
+date,flight_iata,airline,destination,destination_iata,std,weather_label,weather_wind,weather_precip,avg_delay_flight,avg_delay_airline,probabilite_retard,label_retard,prediction_type,predicted_at
+2026-05-17,IB1204,Iberia,Barajas,MAD,17:55,Nuageux,16.6,0,24.4,17.8,88,🟠 Retard modéré (16-30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,DS1390,easyJet,Geneve-cointrin,GVA,17:40,Nuageux,16.6,0,14.2,14.8,77.6,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1875,easyJet,Francisco Sá Carneiro,OPO,18:14,Nuageux,17.3,0,45.8,14.8,77.5,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,W65416,Wizz Air,Luton Airport,LTN,16:40,Nuageux,16.6,0,18.1,17.2,76.4,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EI507,Aer Lingus,Dublin International,DUB,17:55,Nuageux,16.6,0,16.8,24.5,75.7,🟠 Retard modéré (16-30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U22424,easyJet,Luton Airport,LTN,22:30,Clair,6.8,0,17.5,14.8,75.1,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U25142,easyJet,Berlin Brandenburg Airport,BER,20:30,Clair,15.1,0,42,14.8,74.6,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U28384,easyJet,Gatwick,LGW,10:55,Pluie,7.4,0.7,23.8,14.8,74.2,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1873,easyJet,Francisco Sá Carneiro,OPO,16:05,Nuageux,16.6,0,14.2,14.8,73.7,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,AT799,Royal Air Maroc,Mohamed V,CMN,20:05,Clair,15.1,0,22.7,21.9,72.5,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U21875,easyJet,Francisco Sá Carneiro,OPO,18:05,Nuageux,17.3,0,12.7,14.8,70.7,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,2L553,Helvetic Airways,Zurich,ZRH,15:00,Nuageux,17.6,0,19,18.2,69.7,🟠 Retard modéré (16-30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U22020,easyJet,Manchester Airport,MAN,12:35,Nuageux,12.5,0,14.2,14.8,69.5,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1827,easyJet,Cote D'azur International Airport,NCE,15:30,Nuageux,17.6,0,14.2,14.8,69.4,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1642,easyJet,Cote D'azur International Airport,NCE,22:50,Clair,6.8,0,14.2,14.8,67.9,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U21929,easyJet,Leonardo Da Vinci (Fiumicino),FCO,10:30,Pluie,7.4,0.7,24.2,14.8,67.3,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1807,easyJet,Marseille Provence Airport,MRS,19:50,Nuageux,16.8,0,14.2,14.8,65.4,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1618,easyJet,Cote D'azur International Airport,NCE,8:31,Pluie,7.2,0.6,50.5,14.8,65.1,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,LH1073,Lufthansa,Frankfurt International Airport,FRA,18:50,Nuageux,17.3,0,17.8,17,65.1,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,LH2259,Lufthansa,Franz Josef Strauss,MUC,18:30,Nuageux,17.3,0,15.6,17,64.7,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,V72066,Volotea,Mahon,MAH,14:40,Nuageux,16.4,0,16.9,10.7,63.9,🟡 Retard léger (6-15 min),J-1 v2,2026-05-16 00:49
+2026-05-17,EC1877,easyJet,Lisbon Portela,LIS,14:00,Nuageux,16.4,0,14.2,14.8,63.7,🟡 Retard léger (6-15 min),J-1 v2,2026-05-16 00:49
+2026-05-17,DS1392,easyJet,Geneve-cointrin,GVA,21:25,Clair,10.2,0,14.2,14.8,63.1,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,AH1191,Air Algerie,Houari Boumediene,ALG,20:35,Clair,15.1,0,21.2,38.9,63,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,W43298,Wizz Air,Henri Coanda International,OTP,21:00,Clair,10.2,0,14.2,17.2,62.9,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,DL9469,Delta Air Lines,Schiphol,AMS,11:50,Pluie,10.1,1.3,21.9,23,62,🟠 Retard modéré (16-30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U27302,easyJet,Son Sant Joan Airport,PMI,16:00,Nuageux,16.6,0,14.4,14.8,61.8,🟠 Retard modéré (16-30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U22770,easyJet,Bristol,BRS,22:40,Clair,6.8,0,17.1,14.8,61.8,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,V73811,Volotea,Bilbao,BIO,16:00,Nuageux,16.6,0,14.2,10.7,61.8,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,U21817,easyJet,St-Exupéry,LYS,14:45,Nuageux,16.4,0,9.3,14.8,61.4,🟡 Retard léger (6-15 min),J-1 v2,2026-05-16 00:49
+2026-05-17,V72402,Volotea,Poretta,BIA,20:45,Clair,15.1,0,17,10.7,60.6,🔴 Retard sévère (>30 min),J-1 v2,2026-05-16 00:49
+2026-05-17,V72634,Volotea,Marseille Provence Airport,MRS,21:30,Clair,10.2,0,21.5,10.7,59.2,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,U21072,easyJet,Euroairport Swiss,BSL,21:15,Clair,10.2,0,14.2,14.8,58.2,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,U26648,easyJet,Birmingham Airport,BHX,21:55,Clair,10.2,0,14.2,14.8,56.2,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,EC5142,easyJet,Berlin Brandenburg Airport,BER,20:38,Clair,15.1,0,14.2,14.8,54.4,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,AF6135,Air France,St-Exupéry,LYS,14:20,Nuageux,16.4,0,9.1,10.6,54.2,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1819,easyJet,St-Exupéry,LYS,19:45,Nuageux,16.8,0,14.2,14.8,53.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1817,easyJet,St-Exupéry,LYS,14:46,Nuageux,16.4,0,4.2,14.8,53.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V72702,Volotea,Leonardo Da Vinci (Fiumicino),FCO,18:55,Nuageux,17.3,0,10.2,10.7,52.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,U29043,easyJet,Lisbon Portela,LIS,20:52,Clair,15.1,0,14.2,14.8,52.7,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,BA2571,British Airways,Gatwick,LGW,11:05,Pluie,10.1,1.3,12,11.4,52.6,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,LH1071,Lufthansa,Frankfurt International Airport,FRA,10:30,Pluie,7.4,0.7,16.3,17,52.1,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,KL1446,KLM,Schiphol,AMS,18:05,Nuageux,17.3,0,16.7,13.6,51.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,X38037,TUIfly,East Midlands,EMA,22:00,Clair,6.8,0,14.2,14.2,51.6,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,VY,Vueling,El Prat De Llobregat,BCN,18:55,Nuageux,17.3,0,14.2,9.3,51.4,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,DS1929,easyJet,Leonardo Da Vinci (Fiumicino),FCO,10:38,Pluie,7.4,0.7,14.2,14.8,50.7,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,QS4445,Smartwings,Bristol,BRS,22:30,Clair,6.8,0,14.2,14.2,50.3,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,TS511,Air Transat,Pierre Elliott Trudeau International,YUL,11:25,Pluie,10.1,1.3,14.4,16.4,48.1,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7435,Air France,Charles De Gaulle,CDG,14:05,Nuageux,16.4,0,15.2,10.6,47.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7433,Air France,Charles De Gaulle,CDG,11:50,Pluie,10.1,1.3,16.6,10.6,47.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,AF6137,Air France,St-Exupéry,LYS,18:20,Nuageux,17.3,0,6.9,10.6,47.8,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,U22376,easyJet,Luton Airport,LTN,10:15,Pluie,7.4,0.7,13.3,14.8,47.8,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1823,easyJet,Lesquin,LIL,19:00,Nuageux,16.8,0,1.4,14.8,46.7,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,TK1390,Turkish Airlines,Istanbul Airport,IST,11:05,Pluie,10.1,1.3,15.4,16.6,46.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,,Oyonnair,Montpellier Méditerranée,MPL,11:25,Pluie,10.1,1.3,35.6,35.6,46.4,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V72442,Volotea,Son Sant Joan Airport,PMI,10:15,Pluie,7.4,0.7,10.7,10.7,45.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1805,easyJet,Marseille Provence Airport,MRS,16:05,Nuageux,16.6,0,8.3,14.8,45.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7437,Air France,Charles De Gaulle,CDG,19:00,Nuageux,16.8,0,14.5,10.6,44.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,U28386,easyJet,Gatwick,LGW,22:00,Clair,6.8,0,11.5,14.8,44.1,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,QR3788,Qatar Airways,El Prat De Llobregat,BCN,15:05,Nuageux,17.6,0,14.2,7.2,43.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V72456,Volotea,Split,SPU,18:45,Nuageux,17.3,0,15.8,10.7,43.8,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,FR,Ryanair,Sania Ramel,TTU,9:15,Nuageux,8.7,0,14.2,14.2,43.5,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V73914,Volotea,Punta Raisi,PMO,11:10,Pluie,10.1,1.3,16,10.7,43,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V73843,Volotea,Pablo Ruiz Picasso,AGP,14:00,Nuageux,16.4,0,13.1,10.7,41.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V72466,Volotea,Peretola,FLR,16:30,Nuageux,16.6,0,9.3,10.7,41.2,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,G9115,Air Arabia,Brussels Airport,BRU,10:15,Pluie,7.4,0.7,14.2,6.6,40.9,🟡 Retard léger possible,J-1 v2,2026-05-16 00:49
+2026-05-17,V72436,Volotea,Valencia,VLC,17:45,Nuageux,16.6,0,17.1,10.7,38.4,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC7606,easyJet,Lisbon Portela,LIS,15:40,Nuageux,17.6,0,-1.8,14.8,37.4,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,U24601,easyJet,Madeira,FNC,9:10,Nuageux,8.7,0,14.2,14.8,36.7,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC7302,easyJet,Son Sant Joan Airport,PMI,16:08,Nuageux,16.6,0,-4.3,14.8,35.3,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1885,easyJet,"Athens International Airport ""Eleftherios Venizelos""",ATH,6:40,Pluie,8.1,1.4,14.2,14.8,34.7,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC3804,easyJet,Milano Malpensa,MXP,18:35,Nuageux,17.3,0,-11,14.8,34.1,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V72422,Volotea,Lesquin,LIL,17:05,Nuageux,16.6,0,12.7,10.7,34.1,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,3O304,Air Arabia Maroc,Boukhalef,TNG,10:45,Pluie,7.4,0.7,14.2,-1.2,33.5,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7439,Air France,Charles De Gaulle,CDG,20:25,Clair,15.1,0,6.3,10.6,32.7,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V72432,Volotea,Sud Corse,FSC,17:15,Nuageux,16.6,0,9.2,10.7,32.6,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V71347,Volotea,Marco Polo,VCE,22:55,Clair,6.8,0,8.7,10.7,28.4,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V72232,Volotea,Ioannis Kapodistrias,CFU,6:15,Pluie,8.1,1.4,14.2,10.7,27.2,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,IB1200,Iberia,Barajas,MAD,9:05,Nuageux,8.7,0,8.4,17.8,26.5,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1903,easyJet,Sale,RBA,8:55,Pluie,7.2,0.6,14.2,14.8,25.7,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,3O302,Air Arabia Maroc,Inconnu,?,16:10,Nuageux,16.6,0,0,-1.2,25.2,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1905,easyJet,Menara,RAK,20:15,Clair,15.1,0,-2,14.8,23.7,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7431,Air France,Charles De Gaulle,CDG,9:55,Nuageux,8.7,0,8.9,10.6,21.9,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,AT615,Royal Air Maroc,Menara,RAK,21:40,Clair,10.2,0,11.4,21.9,21.5,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1849,easyJet,Liszt Ferenc International,BUD,7:25,Nuageux,8.2,0,14.2,14.8,21.2,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V72610,Volotea,Entzheim,SXB,21:45,Clair,10.2,0,7.8,10.7,20.6,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7441,Air France,Charles De Gaulle,CDG,6:00,Pluie,8.1,1.4,0.9,10.6,18.9,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,G9302,Air Arabia,Sais,FEZ,16:10,Nuageux,16.6,0,3.4,6.6,18.3,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,V72404,Volotea,Campo Dell Oro,AJA,6:00,Pluie,8.1,1.4,5.1,10.7,15.9,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,KL1440,KLM,Schiphol,AMS,6:30,Pluie,8.1,1.4,4,13.6,12.8,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,AF7443,Air France,Charles De Gaulle,CDG,9:15,Nuageux,8.7,0,5.9,10.6,10.9,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,DS1388,easyJet,Geneve-cointrin,GVA,8:50,Pluie,7.2,0.6,4.2,14.8,10.8,🟢 A l'heure,J-1 v2,2026-05-16 00:49
+2026-05-17,EC1815,easyJet,St-Exupéry,LYS,7:00,Nuageux,8.2,0,-7.8,14.8,9.5,🟢 A l'heure,J-1 v2,2026-05-16 00:49
