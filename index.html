@@ -3,832 +3,751 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOD Flights — Prédiction des retards</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<title>BOD Départs · Risque de retard</title>
+<meta name="description" content="Probabilité de retard de chaque départ de Bordeaux-Mérignac, mise à jour toutes les heures.">
+<meta name="theme-color" content="#0a0c10">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f0e0c;
-    --bg2: #1a1916;
-    --bg3: #242320;
-    --border: rgba(255,255,255,0.07);
-    --text: #f0ece4;
-    --text-muted: #8a8478;
-    --text-dim: #5a5650;
-    --accent: #e8a857;
-    --green: #4caf7d;
-    --yellow: #e8c547;
-    --orange: #e8944a;
-    --red: #e85757;
-    --green-bg: rgba(76,175,125,0.1);
-    --yellow-bg: rgba(232,197,71,0.1);
-    --orange-bg: rgba(232,148,74,0.1);
-    --red-bg: rgba(232,87,87,0.1);
-    --radius: 16px;
-    --radius-sm: 10px;
+    --night: #0a0c10;
+    --panel: #0f1217;
+    --tile: #1a1e25;
+    --tile-low: #15181e;
+    --line: rgba(236,232,223,0.07);
+    --line-strong: rgba(236,232,223,0.14);
+    --ink: #ece8df;
+    --ink-2: #a3a7ae;
+    --ink-3: #636871;
+    --accent: #ffb43c;          /* seule couleur : le risque */
+    --accent-soft: rgba(255,180,60,0.14);
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --label: 'Barlow Condensed', 'IBM Plex Sans', sans-serif;
+    --gutter: clamp(16px, 4vw, 40px);
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+  html { -webkit-text-size-adjust:100%; }
+  body { background:var(--night); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; min-height:100vh; overflow-x:hidden; }
+  button, input { font:inherit; color:inherit; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 var(--gutter); }
+  .label { font-family:var(--label); font-weight:600; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); }
 
-  /* BG */
-  body::before {
-    content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-    background: radial-gradient(ellipse 80% 60% at 20% 0%,rgba(232,168,87,0.06) 0%,transparent 60%),
-                radial-gradient(ellipse 60% 40% at 80% 100%,rgba(196,125,46,0.04) 0%,transparent 50%);
+  /* ── Palettes ───────────────────────────── */
+  .flap { display:inline-flex; gap:2px; font-family:var(--mono); font-weight:500; line-height:1; white-space:pre; }
+  .flap .ch {
+    position:relative; display:inline-block; width:1.05em; padding:0.28em 0 0.24em; text-align:center;
+    background:linear-gradient(var(--tile) 0 50%, var(--tile-low) 50% 100%);
+    border-radius:2px; color:var(--ink);
+  }
+  .flap .ch::after { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,0.55); }
+  .flap .ch.blank { color:transparent; }
+  .flap .ch.turn { animation:turn 70ms linear; }
+  @keyframes turn { 0%{transform:scaleY(1)} 50%{transform:scaleY(0.15)} 100%{transform:scaleY(1)} }
+  .flap.sm { font-size:13px; }
+  .flap.md { font-size:15px; }
+  .flap.lg { font-size:clamp(26px, 6vw, 40px); }
+  .flap.accent .ch { color:var(--accent); }
+  .flap.dim .ch { color:var(--ink-3); }
+
+  /* ── En-tête ────────────────────────────── */
+  header.top { border-bottom:1px solid var(--line); background:rgba(10,12,16,0.92); position:sticky; top:0; z-index:20; backdrop-filter:blur(8px); }
+  header.top .wrap { display:flex; align-items:center; justify-content:space-between; gap:16px; height:60px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .brand-name { font-family:var(--label); font-weight:600; font-size:15px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-2); }
+  .clock { display:flex; align-items:center; gap:12px; }
+  .clock .label { display:none; }
+  @media (min-width:640px) { .clock .label { display:block; } }
+
+  /* ── Introduction ───────────────────────── */
+  .intro { padding-top:48px; padding-bottom:28px; display:grid; gap:28px; }
+  .intro h1 { font-family:var(--label); font-weight:600; font-size:clamp(34px, 7vw, 64px); line-height:0.95; letter-spacing:0.01em; text-transform:uppercase; max-width:12ch; }
+  .intro h1 em { font-style:normal; color:var(--accent); }
+  .intro p { color:var(--ink-2); max-width:52ch; }
+  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; }
+  .search { flex:1 1 280px; display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line-strong); border-radius:6px; padding:0 14px; min-height:48px; }
+  .search:focus-within { border-color:var(--ink-3); }
+  .search input { flex:1; background:none; border:none; outline:none; font-family:var(--mono); font-size:15px; letter-spacing:0.02em; text-transform:uppercase; min-width:0; }
+  .search input::placeholder { color:var(--ink-3); text-transform:none; font-family:var(--sans); letter-spacing:0; }
+  .search input::-webkit-search-cancel-button { display:none; }
+  .search .clear { background:none; border:none; color:var(--ink-3); cursor:pointer; font-family:var(--mono); padding:6px; display:none; }
+  .search.has-value .clear { display:block; }
+  .segmented { display:flex; border:1px solid var(--line-strong); border-radius:6px; overflow:hidden; }
+  .segmented button { background:none; border:none; padding:0 18px; min-height:48px; cursor:pointer; font-family:var(--label); font-weight:600; font-size:14px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); }
+  .segmented button + button { border-left:1px solid var(--line-strong); }
+  .segmented button[aria-pressed="true"] { background:var(--ink); color:var(--night); }
+
+  /* ── Compteurs ──────────────────────────── */
+  .counters { display:grid; grid-template-columns:repeat(4, 1fr); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .counter { padding:20px 0 18px; display:grid; gap:10px; }
+  .counter + .counter { border-left:1px solid var(--line); padding-left:20px; }
+  @media (max-width:640px) {
+    .counters { grid-template-columns:repeat(2, 1fr); }
+    .counter:nth-child(3) { border-left:none; padding-left:0; }
+    .counter:nth-child(n+3) { border-top:1px solid var(--line); }
   }
 
-  /* NAV */
-  nav {
-    position:fixed; top:0; left:0; right:0; z-index:100;
-    padding:16px 40px; display:flex; align-items:center; justify-content:space-between;
-    background:rgba(15,14,12,0.9); backdrop-filter:blur(20px);
-    border-bottom:1px solid var(--border);
+  /* ── Frise horaire ──────────────────────── */
+  .timeline { padding-top:28px; padding-bottom:8px; }
+  .timeline-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+  .timeline-head .hint { font-size:13px; color:var(--ink-3); }
+  .track-scroll { overflow-x:auto; padding-bottom:10px; scrollbar-width:thin; scrollbar-color:var(--tile) transparent; -webkit-overflow-scrolling:touch; }
+  .track { position:relative; height:96px; }
+  .track .hour { position:absolute; bottom:0; font-family:var(--mono); font-size:11px; color:var(--ink-3); transform:translateX(-50%); }
+  .track .grid { position:absolute; top:0; bottom:20px; width:1px; background:var(--line); }
+  .track .tick { position:absolute; bottom:22px; width:4px; margin-left:-2px; border-radius:1px; background:var(--ink-3); border:none; cursor:pointer; padding:0; transition:height 600ms cubic-bezier(.2,.8,.2,1), background 300ms; }
+  .track .tick[data-level="1"] { background:rgba(255,180,60,0.35); }
+  .track .tick[data-level="2"] { background:rgba(255,180,60,0.55); }
+  .track .tick[data-level="3"] { background:rgba(255,180,60,0.8); }
+  .track .tick[data-level="4"] { background:var(--accent); }
+  .track .tick.gone { background:var(--tile) !important; }
+  .track .tick:hover, .track .tick:focus-visible { outline:1px solid var(--ink); outline-offset:2px; }
+  .track .now { position:absolute; top:0; bottom:20px; width:1px; background:var(--ink); }
+  .track .now span { position:absolute; top:-2px; left:6px; font-family:var(--mono); font-size:11px; color:var(--ink); white-space:nowrap; }
+
+  /* ── Tableau ────────────────────────────── */
+  .board { padding-top:28px; padding-bottom:12px; }
+  .board-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .board-head h2 { font-family:var(--label); font-weight:600; font-size:22px; letter-spacing:0.08em; text-transform:uppercase; }
+  .board-head .sub { color:var(--ink-3); font-size:13px; }
+  .board-head .sub::first-letter { text-transform:uppercase; }
+  .toggle { background:none; border:1px solid var(--line-strong); border-radius:999px; padding:6px 14px; font-size:13px; color:var(--ink-2); cursor:pointer; }
+  .toggle[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+  .cols, .row { display:grid; grid-template-columns:6.4em 6.2em minmax(0,1fr) 13em 14.4em; align-items:center; column-gap:18px; }
+  .cols { padding:0 12px 8px; border-bottom:1px solid var(--line-strong); }
+  .rows { list-style:none; }
+  .row { width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 12px; cursor:pointer; position:relative; }
+  .row:hover, .row:focus-visible { background:var(--panel); outline:none; }
+  .row[data-level="4"]::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; background:var(--accent); }
+  .row .flight { font-family:var(--mono); font-size:13px; color:var(--ink-2); min-width:0; }
+  .row .airline { display:block; font-family:var(--sans); font-size:12px; color:var(--ink-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row .flap { overflow:hidden; max-width:100%; }
+  .row.gone .flap .ch { color:var(--ink-3); }
+  .risk { display:flex; align-items:center; gap:10px; }
+  .meter { display:inline-flex; gap:3px; }
+  .meter i { width:14px; height:8px; border-radius:1px; background:var(--tile); }
+  .meter[data-level="1"] i:nth-child(-n+1) { background:rgba(255,180,60,0.45); }
+  .meter[data-level="2"] i:nth-child(-n+2) { background:rgba(255,180,60,0.65); }
+  .meter[data-level="3"] i:nth-child(-n+3) { background:rgba(255,180,60,0.85); }
+  .meter[data-level="4"] i { background:var(--accent); }
+  .meter.muted i { background:var(--tile) !important; }
+  .risk .pct { font-family:var(--mono); font-size:14px; min-width:4.2ch; text-align:right; }
+  .risk .word { font-size:12px; color:var(--ink-3); }
+  .row[data-level="4"] .pct { color:var(--accent); }
+  .row.gone .pct { color:var(--ink-3); }
+  .empty { padding:48px 12px; color:var(--ink-2); border-bottom:1px solid var(--line); }
+  .empty strong { display:block; color:var(--ink); font-weight:500; margin-bottom:4px; }
+  details.departed { margin-top:28px; }
+  details.departed summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; color:var(--ink-2); font-size:14px; }
+  details.departed summary::-webkit-details-marker { display:none; }
+  details.departed summary::before { content:'+'; font-family:var(--mono); color:var(--ink-3); }
+  details.departed[open] summary::before { content:'−'; }
+  details.departed .rows { margin-top:8px; }
+
+  @media (max-width:760px) {
+    .cols { display:none; }
+    .row { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"time dest dest" "flight risk status"; row-gap:8px; column-gap:12px; padding:12px 4px; }
+    .row > :nth-child(1) { grid-area:time; }
+    .row > :nth-child(2) { grid-area:flight; }
+    .row > :nth-child(3) { grid-area:dest; }
+    .row > :nth-child(4) { grid-area:risk; }
+    .row > :nth-child(5) { grid-area:status; justify-self:end; }
+    .row .airline { display:none; }
+    .risk { gap:8px; }
+    .risk .word { display:none; }
+    .meter { gap:2px; }
+    .meter i { width:8px; }
+    .risk .pct { min-width:3.6ch; }
+    .row .flap.sm { font-size:11.5px; }
+    .row[data-level="4"]::before { left:-6px; }
   }
-  .nav-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.5px; display:flex; align-items:center; gap:10px; }
-  .nav-logo span { color:var(--accent); }
-  .nav-dot { width:8px; height:8px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-  .nav-tabs { display:flex; gap:4px; background:var(--bg2); padding:4px; border-radius:10px; border:1px solid var(--border); }
-  .nav-tab { padding:8px 20px; border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; color:var(--text-muted); background:none; border:none; font-family:'DM Sans',sans-serif; }
-  .nav-tab.active { background:var(--bg3); color:var(--text); }
-  .nav-tab:hover:not(.active) { color:var(--text); }
 
-  /* PAGES */
-  .page { display:none; padding-top:80px; min-height:100vh; position:relative; z-index:1; }
-  .page.active { display:block; }
-
-  /* HERO */
-  .hero {
-    position:relative; min-height:520px; display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
+  /* ── Panneau de détail ──────────────────── */
+  .scrim { position:fixed; inset:0; background:rgba(5,6,8,0.6); opacity:0; pointer-events:none; transition:opacity 200ms; z-index:40; }
+  .scrim.open { opacity:1; pointer-events:auto; }
+  .drawer {
+    position:fixed; top:0; right:0; bottom:0; width:min(460px, 100%); background:var(--panel); border-left:1px solid var(--line-strong);
+    transform:translateX(100%); visibility:hidden; transition:transform 260ms cubic-bezier(.2,.8,.2,1), visibility 0s 260ms;
+    z-index:50; overflow-y:auto; padding:24px var(--gutter) 40px; outline:none;
   }
-  .hero-bg {
-    position:absolute; inset:0; z-index:0;
-    background:url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1400&q=80') center/cover no-repeat;
-    filter:brightness(0.25) saturate(0.8);
+  .drawer.open { transform:none; visibility:visible; transition:transform 260ms cubic-bezier(.2,.8,.2,1); }
+  @media (max-width:640px) {
+    .drawer { top:auto; width:100%; max-height:88vh; border-left:none; border-top:1px solid var(--line-strong); border-radius:12px 12px 0 0; transform:translateY(100%); }
   }
-  .hero-bg::after {
-    content:''; position:absolute; inset:0;
-    background:linear-gradient(to bottom, rgba(15,14,12,0.3) 0%, rgba(15,14,12,0.95) 100%);
-  }
-  .hero-content { position:relative; z-index:1; text-align:center; padding:60px 40px 48px; max-width:860px; }
-  .hero-badge {
-    display:inline-flex; align-items:center; gap:8px;
-    background:rgba(232,168,87,0.12); border:1px solid rgba(232,168,87,0.25);
-    border-radius:100px; padding:6px 16px; font-size:12px; color:var(--accent);
-    font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:28px;
-  }
-  .hero h1 { font-family:'Syne',sans-serif; font-size:clamp(38px,7vw,76px); font-weight:800; line-height:1; letter-spacing:-2px; margin-bottom:16px; }
-  .hero h1 .accent { color:var(--accent); }
-  .hero p { font-size:16px; color:var(--text-muted); line-height:1.6; max-width:460px; margin:0 auto 40px; font-weight:300; }
+  .drawer .close { position:absolute; top:16px; right:16px; background:none; border:1px solid var(--line-strong); border-radius:6px; width:36px; height:36px; cursor:pointer; color:var(--ink-2); font-family:var(--mono); }
+  .d-head { display:grid; gap:10px; padding-right:44px; justify-items:start; }
+  .d-flight { font-family:var(--mono); font-size:13px; color:var(--ink-2); }
+  .d-dest { font-family:var(--label); font-weight:600; font-size:30px; line-height:1; text-transform:uppercase; letter-spacing:0.02em; }
+  .d-proba { margin:24px 0 8px; padding:20px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); display:grid; gap:12px; }
+  .d-proba .big { display:flex; align-items:center; gap:16px; }
+  .d-proba .meter i { width:22px; height:10px; }
+  .d-proba p { color:var(--ink-2); font-size:14px; }
+  .note { padding:12px 14px; background:var(--accent-soft); border-radius:6px; font-size:14px; color:var(--ink); }
+  .note.neutral { background:var(--tile-low); color:var(--ink-2); }
+  .facts { list-style:none; margin-top:12px; }
+  .facts li { display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .facts li span:first-child { color:var(--ink-2); }
+  .facts li span:last-child { font-family:var(--mono); font-size:13px; text-align:right; }
 
-  /* DATE TABS */
-  .date-tabs { display:flex; gap:8px; justify-content:center; margin-bottom:24px; }
-  .date-tab {
-    padding:10px 24px; border-radius:100px; font-size:13px; font-weight:600;
-    cursor:pointer; border:1px solid var(--border); background:rgba(255,255,255,0.05);
-    color:var(--text-muted); transition:all 0.2s; font-family:'DM Sans',sans-serif;
-  }
-  .date-tab.active { background:var(--accent); color:#0f0e0c; border-color:var(--accent); }
+  /* ── Pied de page ───────────────────────── */
+  footer { margin-top:56px; border-top:1px solid var(--line); padding:28px 0 48px; color:var(--ink-3); font-size:13px; }
+  footer .wrap { display:grid; gap:10px; }
+  footer p { max-width:70ch; }
 
-  /* SEARCH */
-  .search-container { max-width:640px; margin:0 auto; }
-  .search-box { background:rgba(26,25,22,0.95); border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius); padding:8px; display:flex; gap:8px; backdrop-filter:blur(10px); }
-  .search-field { flex:1; position:relative; }
-  .search-field label { position:absolute; top:10px; left:16px; font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); pointer-events:none; }
-  .search-field input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:28px 16px 12px; font-size:15px; color:var(--text); font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s; }
-  .search-field input:focus { border-color:rgba(232,168,87,0.4); }
-  .search-field input::placeholder { color:var(--text-dim); }
-  .search-btn { background:var(--accent); color:#0f0e0c; border:none; border-radius:var(--radius-sm); padding:0 28px; font-size:14px; font-weight:700; font-family:'Syne',sans-serif; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
-  .search-btn:hover { background:#f0b968; transform:translateY(-1px); }
-
-  /* SUGGESTIONS */
-  .suggestions { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; margin-top:4px; display:none; }
-  .suggestions.show { display:block; }
-  .suggestion-item { padding:12px 16px; cursor:pointer; display:flex; align-items:center; justify-content:space-between; transition:background 0.15s; border-bottom:1px solid var(--border); }
-  .suggestion-item:last-child { border-bottom:none; }
-  .suggestion-item:hover { background:var(--bg3); }
-  .suggestion-left { display:flex; align-items:center; gap:12px; }
-  .suggestion-iata { font-family:'Syne',sans-serif; font-weight:700; font-size:12px; color:var(--accent); background:rgba(232,168,87,0.1); padding:4px 8px; border-radius:6px; min-width:36px; text-align:center; }
-  .suggestion-name { font-size:14px; color:var(--text); }
-  .suggestion-sub { font-size:11px; color:var(--text-muted); margin-top:1px; }
-
-  /* RESULTS POPUP */
-  .results-popup { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-top:8px; display:none; }
-  .results-popup.show { display:block; }
-  .results-title { font-size:11px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
-  .flight-option { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--bg3); border-radius:var(--radius-sm); cursor:pointer; margin-bottom:6px; border:1px solid var(--border); transition:all 0.2s; }
-  .flight-option:hover { border-color:rgba(232,168,87,0.3); background:rgba(232,168,87,0.05); }
-  .flight-option:last-child { margin-bottom:0; }
-  .flight-opt-left { display:flex; align-items:center; gap:12px; }
-  .airline-logo { width:32px; height:32px; border-radius:6px; object-fit:contain; background:rgba(255,255,255,0.05); padding:4px; }
-  .flight-num { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; }
-  .flight-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
-  .flight-time-big { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
-
-  /* STATS */
-  .stats-strip { display:flex; gap:1px; background:var(--border); border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
-  .stat-item { flex:1; padding:24px 20px; background:var(--bg); text-align:center; }
-  .stat-num { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; color:var(--accent); display:block; }
-  .stat-label { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-top:4px; }
-
-  /* ALL FLIGHTS */
-  .flights-header { padding:36px 40px 20px; max-width:1100px; margin:0 auto; display:flex; align-items:flex-end; justify-content:space-between; }
-  .flights-header h2 { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.5px; }
-  .flights-header p { color:var(--text-muted); font-size:13px; margin-top:4px; }
-  .filter-chips { display:flex; gap:6px; flex-wrap:wrap; }
-  .chip { padding:7px 14px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--bg2); color:var(--text-muted); transition:all 0.2s; font-family:'DM Sans',sans-serif; }
-  .chip.active,.chip:hover { background:var(--bg3); color:var(--text); border-color:rgba(255,255,255,0.15); }
-  .chip.green.active { background:var(--green-bg); color:var(--green); border-color:rgba(76,175,125,0.3); }
-  .chip.yellow.active { background:var(--yellow-bg); color:var(--yellow); border-color:rgba(232,197,71,0.3); }
-  .chip.orange.active { background:var(--orange-bg); color:var(--orange); border-color:rgba(232,148,74,0.3); }
-  .chip.red.active { background:var(--red-bg); color:var(--red); border-color:rgba(232,87,87,0.3); }
-
-  .flights-table { max-width:1100px; margin:0 auto; padding:0 40px 60px; }
-  .flight-row-header { display:grid; grid-template-columns:110px 1fr 140px 160px 100px; padding:0 16px 10px; font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); }
-  .flight-row { display:grid; grid-template-columns:110px 1fr 140px 160px 100px; align-items:center; padding:14px 16px; border-radius:var(--radius-sm); cursor:pointer; transition:all 0.2s; border:1px solid transparent; margin-bottom:4px; background:var(--bg2); }
-  .flight-row:hover { background:var(--bg3); border-color:var(--border); transform:translateX(3px); }
-  .col-flight { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; display:flex; align-items:center; gap:8px; }
-  .col-airline-logo { width:24px; height:24px; border-radius:4px; object-fit:contain; }
-  .col-dest-name { font-size:14px; font-weight:500; }
-  .col-dest-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
-  .col-time { font-family:'Syne',sans-serif; font-size:20px; font-weight:700; }
-  .risk-badge { display:inline-flex; align-items:center; gap:5px; padding:5px 10px; border-radius:100px; font-size:11px; font-weight:600; }
-  .risk-badge.green { background:var(--green-bg); color:var(--green); }
-  .risk-badge.yellow { background:var(--yellow-bg); color:var(--yellow); }
-  .risk-badge.orange { background:var(--orange-bg); color:var(--orange); }
-  .risk-badge.red { background:var(--red-bg); color:var(--red); }
-  .layer-badge { font-size:10px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; color:var(--text-dim); background:var(--bg3); padding:3px 7px; border-radius:4px; border:1px solid var(--border); }
-
-  /* MODAL */
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(10px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
-  .modal-overlay.show { display:flex; }
-  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:24px; max-width:580px; width:100%; max-height:90vh; overflow-y:auto; animation:modalIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-  @keyframes modalIn { from{opacity:0;transform:scale(0.9) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
-
-  .modal-hero { position:relative; height:200px; border-radius:20px 20px 0 0; overflow:hidden; }
-  .modal-hero-img { width:100%; height:100%; object-fit:cover; }
-  .modal-hero-overlay { position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.1) 0%,rgba(15,14,12,0.9) 100%); }
-  .modal-hero-content { position:absolute; bottom:0; left:0; right:0; padding:20px 24px; display:flex; align-items:flex-end; justify-content:space-between; }
-  .modal-airline-logo { width:48px; height:48px; border-radius:10px; object-fit:contain; background:rgba(255,255,255,0.95); padding:6px; }
-  .modal-close { position:absolute; top:16px; right:16px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); color:var(--text); width:32px; height:32px; border-radius:50%; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all 0.2s; }
-  .modal-close:hover { background:rgba(0,0,0,0.8); }
-
-  .modal-body { padding:20px 24px 28px; }
-  .modal-flight-num { font-size:12px; font-weight:600; color:var(--accent); letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; }
-  .modal-destination { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.5px; }
-  .modal-sub { font-size:13px; color:var(--text-muted); margin-top:4px; margin-bottom:20px; }
-
-  /* VERDICT */
-  .verdict-block { border-radius:var(--radius); padding:24px; text-align:center; margin-bottom:16px; }
-  .verdict-block.green { background:var(--green-bg); border:1px solid rgba(76,175,125,0.2); }
-  .verdict-block.yellow { background:var(--yellow-bg); border:1px solid rgba(232,197,71,0.2); }
-  .verdict-block.orange { background:var(--orange-bg); border:1px solid rgba(232,148,74,0.2); }
-  .verdict-block.red { background:var(--red-bg); border:1px solid rgba(232,87,87,0.2); }
-  .verdict-emoji { font-size:36px; margin-bottom:10px; }
-  .verdict-label { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; margin-bottom:6px; }
-  .verdict-block.green .verdict-label { color:var(--green); }
-  .verdict-block.yellow .verdict-label { color:var(--yellow); }
-  .verdict-block.orange .verdict-label { color:var(--orange); }
-  .verdict-block.red .verdict-label { color:var(--red); }
-  .verdict-sub { font-size:13px; opacity:0.75; margin-bottom:16px; }
-  .proba-bar-track { height:6px; background:rgba(255,255,255,0.06); border-radius:100px; overflow:hidden; }
-  .proba-bar-fill { height:100%; border-radius:100px; width:0%; transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
-  .proba-bar-fill.green { background:var(--green); }
-  .proba-bar-fill.yellow { background:var(--yellow); }
-  .proba-bar-fill.orange { background:var(--orange); }
-  .proba-bar-fill.red { background:var(--red); }
-  .proba-label { display:flex; justify-content:space-between; font-size:11px; opacity:0.6; margin-bottom:6px; }
-
-  /* DETAIL GRID */
-  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
-  .detail-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 16px; }
-  .detail-card.full { grid-column:1/-1; }
-  .detail-label { font-size:10px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; color:var(--text-dim); margin-bottom:5px; }
-  .detail-value { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
-  .detail-sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
-
-  /* METEO CARD */
-  .meteo-card { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); padding:16px; grid-column:1/-1; }
-  .meteo-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
-  .meteo-icon { font-size:32px; }
-  .meteo-label-main { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; }
-  .meteo-label-sub { font-size:12px; color:var(--text-muted); margin-top:2px; }
-  .meteo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-  .meteo-item { text-align:center; background:rgba(255,255,255,0.03); border-radius:8px; padding:10px 8px; }
-  .meteo-item-val { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; }
-  .meteo-item-label { font-size:10px; color:var(--text-dim); margin-top:3px; text-transform:uppercase; letter-spacing:0.5px; }
-
-  /* SOURCE BADGE */
-  .source-row { display:flex; align-items:center; gap:8px; margin-bottom:16px; }
-  .source-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:100px; font-size:11px; font-weight:600; background:var(--bg3); border:1px solid var(--border); color:var(--text-muted); }
-  .source-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); }
-
-  /* LOADING / EMPTY */
-  .loading { text-align:center; padding:80px 40px; color:var(--text-muted); }
-  .loading-spinner { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .empty-state { text-align:center; padding:60px 40px; color:var(--text-muted); }
-  .empty-state h3 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; color:var(--text); margin-bottom:8px; }
-
-  @media(max-width:768px) {
-    nav { padding:14px 16px; }
-    .hero-content { padding:40px 20px 36px; }
-    .flights-header { padding:24px 16px 16px; flex-direction:column; gap:14px; align-items:flex-start; }
-    .flights-table { padding:0 16px 40px; }
-    .flight-row,.flight-row-header { grid-template-columns:90px 1fr 130px; }
-    .flight-row>*:nth-child(3),.flight-row-header>*:nth-child(3) { display:none; }
-    .flight-row>*:nth-child(5),.flight-row-header>*:nth-child(5) { display:none; }
-    .stats-strip { flex-wrap:wrap; }
-    .stat-item { min-width:50%; }
-    .detail-grid { grid-template-columns:1fr; }
-    .meteo-grid { grid-template-columns:repeat(3,1fr); }
+  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+  @media (prefers-reduced-motion: reduce) {
+    .flap .ch.turn { animation:none; }
+    .drawer, .scrim, .track .tick { transition:none; }
   }
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="nav-logo"><div class="nav-dot"></div>BOD<span>flights</span></div>
-  <div class="nav-tabs">
-    <button class="nav-tab active" onclick="showPage('home',this)">Recherche</button>
-    <button class="nav-tab" onclick="showPage('all',this)">Tous les vols</button>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <span class="flap md" id="brand-flap" aria-hidden="true"></span>
+      <span class="brand-name">Départs · Mérignac</span>
+    </div>
+    <div class="clock">
+      <span class="label" id="updated-label">Heure</span>
+      <span class="flap md" id="clock" role="timer" aria-label="Heure à Bordeaux"></span>
+    </div>
   </div>
-</nav>
+</header>
 
-<!-- HOME -->
-<div class="page active" id="page-home">
-  <div class="hero">
-    <div class="hero-bg"></div>
-    <div class="hero-content">
-      <div class="hero-badge">✈ Bordeaux-Mérignac · BOD · Live</div>
-      <h1>Votre vol va-t-il<br>être <span class="accent">en retard ?</span></h1>
-      <p>Prédiction ML des retards au départ de Bordeaux. Tapez votre ville ou numéro de vol.</p>
-
-      <div class="date-tabs">
-        <button class="date-tab active" id="tab-today" onclick="selectDateTab('today',this)">Aujourd'hui</button>
-        <button class="date-tab" id="tab-tomorrow" onclick="selectDateTab('tomorrow',this)">Demain</button>
-      </div>
-
-      <div class="search-container">
-        <div class="search-box">
-          <div class="search-field">
-            <label>VILLE OU N° DE VOL</label>
-            <input type="text" id="search-input" placeholder="Paris, Londres, U2 1867..." autocomplete="off" oninput="onSearchInput(this.value)">
-          </div>
-          <button class="search-btn" onclick="doSearch()">→</button>
-        </div>
-        <div class="suggestions" id="suggestions"></div>
-        <div class="results-popup" id="results-popup">
-          <div class="results-title" id="results-title">Vols correspondants</div>
-          <div id="flight-options"></div>
-        </div>
+<main>
+  <section class="intro wrap">
+    <h1>Votre vol partira-t-il <em>à l'heure&nbsp;?</em></h1>
+    <p>Pour chaque départ de Bordeaux, la probabilité d'un retard de 15&nbsp;minutes ou plus. Le tableau se met à jour toutes les heures avec les annonces de l'aéroport.</p>
+    <div class="controls">
+      <label class="search" id="search-box">
+        <span class="sr-only">Ville ou numéro de vol</span>
+        <input id="search" type="search" placeholder="Ville ou numéro de vol (Lyon, U2 3407…)" autocomplete="off" spellcheck="false">
+        <button class="clear" type="button" id="search-clear" aria-label="Effacer la recherche">✕</button>
+      </label>
+      <div class="segmented" role="group" aria-label="Jour">
+        <button type="button" data-day="0" aria-pressed="true">Aujourd'hui</button>
+        <button type="button" data-day="1" aria-pressed="false">Demain</button>
       </div>
     </div>
-  </div>
+  </section>
 
-  <div class="stats-strip" id="stats-strip">
-    <div class="stat-item"><span class="stat-num" id="stat-total">—</span><div class="stat-label">Vols prédits</div></div>
-    <div class="stat-item"><span class="stat-num" id="stat-risk">—</span><div class="stat-label">Risque élevé</div></div>
-    <div class="stat-item"><span class="stat-num" id="stat-ontime">—</span><div class="stat-label">Risque faible</div></div>
-    <div class="stat-item"><span class="stat-num" id="stat-updated">—</span><div class="stat-label">Mis à jour</div></div>
-  </div>
-</div>
+  <section class="wrap" aria-label="Résumé">
+    <div class="counters">
+      <div class="counter"><span class="label">À venir</span><span class="flap lg" id="c-upcoming"></span></div>
+      <div class="counter"><span class="label">Risque élevé</span><span class="flap lg accent" id="c-risk"></span></div>
+      <div class="counter"><span class="label">Retards annoncés</span><span class="flap lg" id="c-announced"></span></div>
+      <div class="counter"><span class="label">Déjà partis</span><span class="flap lg dim" id="c-gone"></span></div>
+    </div>
+  </section>
 
-<!-- ALL FLIGHTS -->
-<div class="page" id="page-all">
-  <div class="flights-header">
-    <div>
-      <h2>Tous les vols</h2>
-      <p id="all-subtitle">Chargement...</p>
+  <section class="timeline wrap" aria-label="Frise des départs">
+    <div class="timeline-head">
+      <span class="label">La journée, heure par heure</span>
+      <span class="hint">Plus le trait est haut et clair, plus le risque est élevé.</span>
     </div>
-    <div class="filter-chips">
-      <button class="chip active" onclick="setFilter('all',this)">Tous</button>
-      <button class="chip green" onclick="setFilter('green',this)">🟢 Risque faible</button>
-      <button class="chip yellow" onclick="setFilter('yellow',this)">🟡 Possible</button>
-      <button class="chip orange" onclick="setFilter('orange',this)">🟠 Probable</button>
-      <button class="chip red" onclick="setFilter('red',this)">🔴 Très probable</button>
-    </div>
-  </div>
-  <div class="flights-table">
-    <div class="flight-row-header">
-      <div>Vol</div><div>Destination</div><div>Heure</div><div>Prédiction</div><div>Moment</div>
-    </div>
-    <div id="flights-list"><div class="loading"><div class="loading-spinner"></div><p>Chargement...</p></div></div>
-  </div>
-</div>
+    <div class="track-scroll" id="track-scroll"><div class="track" id="track"></div></div>
+  </section>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal" onclick="closeModalOverlay(event)">
-  <div class="modal" id="modal-content"></div>
-</div>
+  <section class="board wrap" aria-labelledby="board-title">
+    <div class="board-head">
+      <div>
+        <h2 id="board-title">Prochains départs</h2>
+        <div class="sub" id="board-sub">Chargement…</div>
+      </div>
+      <button type="button" class="toggle" id="only-risk" aria-pressed="false">Risque élevé seulement</button>
+    </div>
+    <div class="cols label" aria-hidden="true"><span>Heure</span><span>Vol</span><span>Destination</span><span>Risque de retard</span><span>Statut</span></div>
+    <ul class="rows" id="rows"></ul>
+    <details class="departed" id="departed" hidden>
+      <summary id="departed-summary"></summary>
+      <ul class="rows" id="rows-gone"></ul>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p id="model-note">Prédictions issues d'un modèle d'apprentissage automatique (forêt aléatoire) entraîné sur l'historique des départs de Bordeaux depuis avril 2026.</p>
+    <p>Sources : tableau des départs de l'aéroport de Bordeaux, AviationStack, Open-Meteo, calendrier scolaire de l'Éducation nationale. Une probabilité n'est pas une certitude : vérifiez toujours auprès de votre compagnie.</p>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-dest" tabindex="-1"></aside>
 
 <script>
 // ══════════════════════════════════════════
-// CONFIG
+// Données
 // ══════════════════════════════════════════
-// Fichier écrit par scripts/pipeline.py (GitHub Actions), 3 fois par jour.
+// Fichier écrit par scripts/pipeline.py (GitHub Actions), toutes les heures.
 const DATA_URL = 'data/predictions.json';
+const REFRESH_MS = 5 * 60 * 1000;
 
-// Les textes viennent d'AviationStack : on les échappe avant de les insérer dans la page.
+const RISK = {
+  green:  {level:1, word:'Faible'},
+  yellow: {level:2, word:'Possible'},
+  orange: {level:3, word:'Probable'},
+  red:    {level:4, word:'Très probable'},
+};
+
+// Noms lisibles pour les aéroports dont AviationStack donne un nom peu parlant.
+const DEST_NAMES = {
+  CDG:'Paris CDG', ORY:'Paris Orly', LHR:'Londres Heathrow', LGW:'Londres Gatwick', LTN:'Londres Luton',
+  STN:'Londres Stansted', LCY:'Londres City', BCN:'Barcelone', MAD:'Madrid', AMS:'Amsterdam', FCO:'Rome',
+  MXP:'Milan Malpensa', LIN:'Milan Linate', BER:'Berlin', LIS:'Lisbonne', OPO:'Porto', ATH:'Athènes',
+  IST:'Istanbul', SAW:'Istanbul SAW', CMN:'Casablanca', RAK:'Marrakech', AGA:'Agadir', TUN:'Tunis',
+  ALG:'Alger', ORN:'Oran', NCE:'Nice', LYS:'Lyon', MRS:'Marseille', TLS:'Toulouse', NTE:'Nantes',
+  LIL:'Lille', SXB:'Strasbourg', GVA:'Genève', ZRH:'Zurich', BSL:'Bâle-Mulhouse', FRA:'Francfort',
+  MUC:'Munich', VIE:'Vienne', CPH:'Copenhague', ARN:'Stockholm', OSL:'Oslo', DUB:'Dublin', EDI:'Édimbourg',
+  MAN:'Manchester', BRS:'Bristol', BHX:'Birmingham', BRU:'Bruxelles', CRL:'Charleroi', LUX:'Luxembourg',
+  AJA:'Ajaccio', BIA:'Bastia', FSC:'Figari', CLY:'Calvi', VCE:'Venise', NAP:'Naples', FLR:'Florence',
+  PMO:'Palerme', CTA:'Catane', OLB:'Olbia', BRI:'Bari', AGP:'Malaga', ALC:'Alicante', VLC:'Valence',
+  SVQ:'Séville', PMI:'Palma', IBZ:'Ibiza', MAH:'Minorque', FAO:'Faro', FNC:'Funchal', TFS:'Tenerife',
+  LPA:'Gran Canaria', ACE:'Lanzarote', PRG:'Prague', BUD:'Budapest', OTP:'Bucarest', KRK:'Cracovie',
+  SPU:'Split', DBV:'Dubrovnik', HER:'Héraklion', CFU:'Corfou', MLA:'Malte', DJE:'Djerba', MIR:'Monastir',
+  YUL:'Montréal', DOH:'Doha', DXB:'Dubaï', TLV:'Tel Aviv', MPL:'Montpellier', TLN:'Toulon', BES:'Brest',
+  RNS:'Rennes', JER:'Jersey', RVN:'Rovaniemi', DSS:'Dakar', FDF:'Fort-de-France', SID:'Sal', BVC:'Boa Vista',
+};
+
+// Villes tapées en toutes lettres -> codes d'aéroport (recherche).
+const CITY_ALIASES = {
+  paris:['CDG','ORY'], londres:['LHR','LGW','LTN','STN','LCY'], london:['LHR','LGW','LTN','STN','LCY'],
+  milan:['MXP','LIN','BGY'], rome:['FCO','CIA'], istanbul:['IST','SAW'], bale:['BSL'], basel:['BSL'],
+  geneve:['GVA'], geneva:['GVA'], tenerife:['TFS','TFN'], majorque:['PMI'], corse:['AJA','BIA','FSC','CLY'],
+  maroc:['CMN','RAK','AGA','FEZ','TNG','RBA'],
+};
+
+const state = { data:null, flights:[], day:0, query:'', onlyRisk:false, generatedAt:null };
+
 function esc(v) {
   return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
-
-// Date du jour à Bordeaux, au format AAAA-MM-JJ.
-function parisDate(offsetDays = 0) {
-  const d = new Date(Date.now() + offsetDays * 86400000);
-  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Paris'}).format(d);
+function norm(s) {
+  return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
-
-// ── CITY → IATA MAP ──
-const CITY_MAP = {
-  'paris': ['CDG','ORY','LBG'], 'london': ['LHR','LGW','LTN','STN','LCY'],
-  'londres': ['LHR','LGW','LTN','STN','LCY'], 'barcelona': ['BCN'], 'barcelone': ['BCN'],
-  'madrid': ['MAD'], 'amsterdam': ['AMS'], 'rome': ['FCO','CIA'], 'milan': ['MXP','LIN','BGY'],
-  'milan': ['MXP','LIN'], 'berlin': ['BER'], 'lisbonne': ['LIS'], 'lisbon': ['LIS'],
-  'porto': ['OPO'], 'séville': ['SVQ'], 'seville': ['SVQ'], 'athenes': ['ATH'], 'athens': ['ATH'],
-  'istanbul': ['IST','SAW'], 'dubai': ['DXB'], 'casablanca': ['CMN'], 'marrakech': ['RAK'],
-  'tunis': ['TUN'], 'alger': ['ALG'], 'oran': ['ORN'], 'nice': ['NCE'], 'lyon': ['LYS'],
-  'marseille': ['MRS'], 'toulouse': ['TLS'], 'nantes': ['NTE'], 'lille': ['LIL'],
-  'strasbourg': ['SXB'], 'geneve': ['GVA'], 'genève': ['GVA'], 'zurich': ['ZRH'],
-  'francfort': ['FRA'], 'frankfurt': ['FRA'], 'munich': ['MUC'], 'vienne': ['VIE'],
-  'vienna': ['VIE'], 'copenhague': ['CPH'], 'copenhagen': ['CPH'], 'stockholm': ['ARN'],
-  'oslo': ['OSL'], 'dublin': ['DUB'], 'edinburgh': ['EDI'], 'edimbourg': ['EDI'],
-  'manchester': ['MAN'], 'bruxelles': ['BRU'], 'brussels': ['BRU'], 'luxembourg': ['LUX'],
-  'ajaccio': ['AJA'], 'bastia': ['BIA'], 'figari': ['FSC'], 'calvi': ['CLY'],
-  'biarritz': ['BIQ'], 'pau': ['PUF'], 'montpellier': ['MPL'], 'brest': ['BES'],
-  'rennes': ['RNS'], 'caen': ['CFR'], 'clermont': ['CFE'], 'limoges': ['LIG'],
-  'venise': ['VCE'], 'venice': ['VCE'], 'naples': ['NAP'], 'florence': ['FLR'],
-  'catane': ['CTA'], 'palerme': ['PMO'], 'malaga': ['AGP'], 'alicante': ['ALC'],
-  'palma': ['PMI'], 'ibiza': ['IBZ'], 'faro': ['FAO'], 'funchal': ['FNC'],
-  'tenerife': ['TFS','TFN'], 'gran canaria': ['LPA'], 'lanzarote': ['ACE'],
-  'fuerteventura': ['FUE'], 'agadir': ['AGA'], 'maroc': ['CMN','RAK','AGA','ORN'],
-  'prague': ['PRG'], 'varsovie': ['WAW'], 'budapest': ['BUD'], 'bucarest': ['OTP'],
-  'sofia': ['SOF'], 'athènes': ['ATH'], 'thessalonique': ['SKG'], 'split': ['SPU'],
-  'dubrovnik': ['DBV'], 'sarajevo': ['SJJ'], 'belgrade': ['BEG'], 'katowice': ['KTW'],
-  'cracovie': ['KRK'], 'wroclaw': ['WRO'], 'gdansk': ['GDN'], 'riga': ['RIX'],
-  'tallinn': ['TLL'], 'vilnius': ['VNO'], 'luxembourg': ['LUX'], 'bale': ['BSL'],
-  'bâle': ['BSL'], 'montreal': ['YUL'], 'new york': ['JFK','EWR','LGA'],
-  'toronto': ['YYZ'], 'doha': ['DOH'], 'abu dhabi': ['AUH'], 'tel aviv': ['TLV'],
-  'djerba': ['DJE'], 'monastir': ['MIR'], 'enfidha': ['NBE'],
-};
-
-// ── DESTINATION NAME CLEANUP ──
-const DEST_NAMES = {
-  'CDG':'Paris Charles de Gaulle','ORY':'Paris Orly','LBG':'Paris Le Bourget',
-  'LHR':'Londres Heathrow','LGW':'Londres Gatwick','LTN':'Londres Luton','STN':'Londres Stansted','LCY':'Londres City',
-  'BCN':'Barcelone','MAD':'Madrid','AMS':'Amsterdam','FCO':'Rome Fiumicino','MXP':'Milan Malpensa',
-  'BER':'Berlin Brandenburg','LIS':'Lisbonne','OPO':'Porto','ATH':'Athènes','IST':'Istanbul',
-  'CMN':'Casablanca','RAK':'Marrakech','TUN':'Tunis','ALG':'Alger','ORN':'Oran',
-  'NCE':'Nice','LYS':'Lyon','MRS':'Marseille','TLS':'Toulouse','NTE':'Nantes','LIL':'Lille',
-  'SXB':'Strasbourg','GVA':'Genève','ZRH':'Zurich','FRA':'Francfort','MUC':'Munich',
-  'VIE':'Vienne','CPH':'Copenhague','ARN':'Stockholm','OSL':'Oslo','DUB':'Dublin',
-  'EDI':'Édimbourg','MAN':'Manchester','BRU':'Bruxelles','LUX':'Luxembourg',
-  'AJA':'Ajaccio','BIA':'Bastia','FSC':'Figari','CLY':'Calvi',
-  'VCE':'Venise','NAP':'Naples','FLR':'Florence','PMO':'Palerme',
-  'AGP':'Malaga','ALC':'Alicante','PMI':'Palma de Majorque','IBZ':'Ibiza',
-  'FAO':'Faro','FNC':'Funchal','TFS':'Tenerife Sud','LPA':'Gran Canaria',
-  'PRG':'Prague','WAW':'Varsovie','BUD':'Budapest','OTP':'Bucarest',
-  'DOH':'Doha','AUH':'Abu Dhabi','TLV':'Tel Aviv','DXB':'Dubaï',
-  'DJE':'Djerba','MIR':'Monastir','YUL':'Montréal','SVQ':'Séville',
-  'BSL':'Bâle-Mulhouse','KTW':'Katowice','KRK':'Cracovie','RIX':'Riga',
-  'MAH':'Minorque','IBZ':'Ibiza','MRS':'Marseille','BIQ':'Biarritz',
-};
-
-// ── WEATHER ICONS ──
-function getWeatherIcon(label) {
-  if (!label) return '🌡️';
-  const l = label.toLowerCase();
-  if (l.includes('orage')) return '⛈️';
-  if (l.includes('neige')) return '❄️';
-  if (l.includes('pluie') || l.includes('rain')) return '🌧️';
-  if (l.includes('brouillard') || l.includes('fog')) return '🌫️';
-  if (l.includes('nuageux') || l.includes('cloud')) return '☁️';
-  if (l.includes('clair') || l.includes('clear') || l.includes('soleil')) return '☀️';
-  return '🌤️';
-}
-
-// ── AIRLINE LOGO ──
-function getAirlineLogo(airline) {
-  const codes = {
-    'easyjet':'U2','air france':'AF','volotea':'V7','klm':'KL','iberia':'IB',
-    'vueling':'VY','lufthansa':'LH','turkish airlines':'TK','british airways':'BA',
-    'aer lingus':'EI','wizz air':'W6','royal air maroc':'AT','swiss':'LX',
-    'transavia':'HV','delta air lines':'DL','qatar airways':'QR','sas':'SK',
-    'norwegian':'DY','air arabia':'G9','nouvelair':'BJ','tunisair':'TU',
-    'corsair':'SS','luxair':'LG','air algerie':'AH','air transat':'TS',
-    'aegean airlines':'A3','helvetic airways':'2L','airbaltic':'BT',
-  };
-  const key = (airline||'').toLowerCase();
-  for (const [name, code] of Object.entries(codes)) {
-    if (key.includes(name)) return `https://www.gstatic.com/flights/airline_logos/70px/${code}.png`;
-  }
-  return null;
-}
-
-// ── CITY IMAGE ──
-function getCityImage(dest, destIata) {
-  const images = {
-    'CDG':'photo-1502602898657-3e91760cbb34','ORY':'photo-1502602898657-3e91760cbb34',
-    'LHR':'photo-1513635269975-59663e0ac1ad','LGW':'photo-1513635269975-59663e0ac1ad',
-    'LTN':'photo-1513635269975-59663e0ac1ad','BCN':'photo-1539037116277-4db20889f2d4',
-    'MAD':'photo-1543783207-ec64e4d95325','AMS':'photo-1534351590666-13e3e96b5017',
-    'FCO':'photo-1529260830199-42c24126f198','MXP':'photo-1520175480921-4edfa2983e0f',
-    'BER':'photo-1566404791232-af9fe0ae8f8b','LIS':'photo-1513735539099-cf80e28f1dc1',
-    'OPO':'photo-1555881400-74d7acaacd8b','ATH':'photo-1555993539-1732b0258235',
-    'IST':'photo-1527838832700-5059252407fa','CMN':'photo-1489493887464-892be6d1daae',
-    'TUN':'photo-1489493887464-892be6d1daae','NCE':'photo-1491166617655-0723a0e2a1ce',
-    'LYS':'photo-1583266166856-31a3a04a81e6','MRS':'photo-1558618666-fcd25c85cd64',
-    'GVA':'photo-1515488042361-ee00e0ddd4e4','ZRH':'photo-1515488042361-ee00e0ddd4e4',
-    'FRA':'photo-1599946347371-68eb71b16afc','MUC':'photo-1577048982768-5cb3e7ddfa23',
-    'VIE':'photo-1516550893923-42d28e5677af','CPH':'photo-1513622470522-26c3c8a854bc',
-    'DUB':'photo-1548838007-b1ea8f27b9a1','VCE':'photo-1523906834658-6e24ef2386f9',
-    'AGP':'photo-1555881400-74d7acaacd8b','PMI':'photo-1559827260-dc66d52bef19',
-    'FNC':'photo-1555881400-74d7acaacd8b','DOH':'photo-1566888596782-c7f41cc184c5',
-    'AJA':'photo-1534258936925-c58bed479fcb','PRG':'photo-1541849546-216549ae216d',
-    'BUD':'photo-1560969184-10fe8719e047','OTP':'photo-1558618047-f3e1ece3ccfa',
-    'MAN':'photo-1513635269975-59663e0ac1ad','EDI':'photo-1548247416-ec66f4900b2e',
-    'BSL':'photo-1515488042361-ee00e0ddd4e4','TLS':'photo-1558618666-fcd25c85cd64',
-  };
-  const id = images[destIata] || 'photo-1436491865332-7a61a109cc05';
-  return `https://images.unsplash.com/${id}?w=800&q=80`;
-}
-
-// ── CLEAN DEST NAME ──
-function cleanDest(destination, iata) {
-  if (DEST_NAMES[iata]) return DEST_NAMES[iata];
-  if (!destination) return iata || '—';
-  let d = destination;
-  d = d.replace(/airport|international|aeroport|aeropuerto|flughafen|aéroport/gi,'').trim();
-  d = d.replace(/\s+/g,' ').trim();
-  return d || iata || '—';
-}
-
-// ══════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════
-let allFlights = [];
-let meta = {};
-let currentFilter = 'all';
-let selectedDate = 'today'; // today or tomorrow
-
-// ══════════════════════════════════════════
-// LOAD DATA
-// ══════════════════════════════════════════
-async function loadData() {
-  try {
-    const res = await fetch(`${DATA_URL}?t=${Date.now()}`);
-    if (!res.ok) throw new Error(res.status);
-    meta = await res.json();
-    allFlights = meta.flights || [];
-    renderAllFlights();
-    updateStats();
-  } catch(e) {
-    document.getElementById('flights-list').innerHTML = `
-      <div class="empty-state"><h3>Données indisponibles</h3>
-      <p>Les prédictions n'ont pas pu être chargées. Réessaie dans quelques minutes.</p></div>`;
-  }
-}
-
-// ══════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════
-// Niveau de risque calculé par le pipeline à partir de la probabilité de retard ≥ 15 min.
-function getRiskClass(flight) {
-  return ['green','yellow','orange','red'].includes(flight.risk_level) ? flight.risk_level : 'green';
-}
-
-function getRiskEmoji(cls) { return {green:'🟢',yellow:'🟡',orange:'🟠',red:'🔴'}[cls]||'⚪'; }
-
-function getRiskShort(cls) {
-  return {green:'Risque faible',yellow:'Retard possible',orange:'Retard probable',red:'Retard très probable'}[cls];
-}
-
-function getLayerBadge(type) {
-  return ['J-1','Jour J','T-2h','Annonce'].includes(type) ? type : 'Jour J';
-}
-
-function getVerdictText(cls) {
-  return {green:'Vol à l\'heure probable ✓',yellow:'Retard possible',orange:'Retard probable',red:'Retard très probable'}[cls];
-}
-
-// Retard annoncé par l'aéroport (« Prévu à HH:MM »).
-function getAnnouncedText(f) {
-  if (!f.est_departure) return '';
-  const d = Number(f.announced_delay);
-  return `Annoncé à ${esc(f.est_departure)}` + (Number.isFinite(d) ? ` (${d > 0 ? '+' : ''}${d} min)` : '');
-}
-
-// Vol déjà parti : retard réel constaté.
-function getActualText(f) {
-  if (!f.atd) return '';
-  const d = Number(f.delay_min);
-  return `Parti à ${esc(f.atd)}` + (Number.isFinite(d) ? ` (${d > 0 ? '+' : ''}${d} min)` : '');
-}
-
-function flightIndex(f) { return allFlights.indexOf(f); }
-
 function hasNum(v) { return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)); }
+function signed(n) { return (n > 0 ? '+' : '') + n; }
 
-// ══════════════════════════════════════════
-// DATE TAB
-// ══════════════════════════════════════════
-function selectDateTab(tab, btn) {
-  selectedDate = tab;
-  document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('results-popup').classList.remove('show');
-  document.getElementById('suggestions').classList.remove('show');
-  document.getElementById('search-input').value = '';
-  updateStats();
-  renderAllFlights();
+// Date et heure à Bordeaux, quel que soit le fuseau du visiteur.
+function parisNow() {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone:'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23',
+  }).formatToParts(new Date()).map(p => [p.type, p.value]));
+  return { date:`${parts.year}-${parts.month}-${parts.day}`, minutes:Number(parts.hour) * 60 + Number(parts.minute), hhmm:`${parts.hour}:${parts.minute}` };
+}
+function parisDate(offsetDays) {
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Paris'}).format(new Date(Date.now() + offsetDays * 86400000));
+}
+function toMinutes(hhmm) { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; }
+function frenchDate(iso) {
+  return new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long', timeZone:'UTC'}).format(new Date(iso + 'T12:00:00Z'));
 }
 
-function getFilteredByDate() {
-  const targetDate = parisDate(selectedDate === 'today' ? 0 : 1);
-  return allFlights.filter(f => f.date === targetDate);
+function destName(f) {
+  if (DEST_NAMES[f.destination_iata]) return DEST_NAMES[f.destination_iata];
+  const d = String(f.destination || '').replace(/airport|international|a[ée]roport|aeropuerto|flughafen/gi, '').replace(/\s+/g, ' ').trim();
+  return d || f.destination_iata || '—';
 }
-
-// ══════════════════════════════════════════
-// STATS
-// ══════════════════════════════════════════
-function updateStats() {
-  const flights = getFilteredByDate();
-  document.getElementById('stat-total').textContent = flights.length || '—';
-  document.getElementById('stat-risk').textContent = flights.filter(f => getRiskClass(f)==='red').length || '0';
-  document.getElementById('stat-ontime').textContent = flights.filter(f => getRiskClass(f)==='green').length || '0';
-  const t = meta.generated_at;
-  document.getElementById('stat-updated').textContent = t ? String(t).substring(11,16) : '—';
+function riskOf(f) { return RISK[f.risk_level] || RISK.green; }
+function isGone(f) {
+  return Boolean(f.atd) || /^d[ée]coll/i.test(f.airport_status || '') || f.status === 'landed';
 }
+function isCancelled(f) { return f.status === 'cancelled' || /annul/i.test(f.airport_status || ''); }
 
-// ══════════════════════════════════════════
-// RENDER ALL FLIGHTS
-// ══════════════════════════════════════════
-function renderAllFlights() {
-  const list = document.getElementById('flights-list');
-  const subtitle = document.getElementById('all-subtitle');
-  let flights = getFilteredByDate();
-  if (currentFilter !== 'all') flights = flights.filter(f => getRiskClass(f) === currentFilter);
-  flights.sort((a,b) => (a.std||'').localeCompare(b.std||''));
-  const estimated = flights.some(f => f.estimated_schedule);
-  subtitle.textContent = `${flights.length} vol${flights.length>1?'s':''} · ${parisDate(selectedDate === 'today' ? 0 : 1)}`
-    + (estimated ? ' · programme estimé d\'après la semaine dernière' : '');
-  if (flights.length === 0) {
-    list.innerHTML = currentFilter === 'all'
-      ? '<div class="empty-state"><h3>Pas encore de prédictions</h3><p>Les vols de cette date apparaîtront après le prochain passage de collecte.</p></div>'
-      : '<div class="empty-state"><h3>Aucun vol</h3><p>Essayez un autre filtre.</p></div>';
-    return;
+// Texte du statut, façon tableau d'aéroport : 16 caractères au plus, 10 en version courte (mobile).
+function statusText(f, short) {
+  if (isCancelled(f)) return 'ANNULÉ';
+  if (f.atd) {
+    const d = hasNum(f.delay_min) ? signed(Number(f.delay_min)) : '';
+    return short ? `PARTI ${d || f.atd}` : `PARTI ${f.atd} ${d}`;
   }
-  list.innerHTML = flights.map(f => {
-    const cls = getRiskClass(f);
-    const layer = getLayerBadge(f.prediction_type);
-    const proba = f.probabilite_retard ? Math.round(f.probabilite_retard)+'%' : '—';
-    const logo = getAirlineLogo(f.airline);
-    const destName = cleanDest(f.destination, f.destination_iata);
-    return `
-    <div class="flight-row" onclick="showModalAt(${flightIndex(f)})">
-      <div class="col-flight">
-        ${logo ? `<img class="col-airline-logo" src="${logo}" onerror="this.style.display='none'" alt="">` : ''}
-        ${esc(f.flight_iata||'—')}
-      </div>
-      <div>
-        <div class="col-dest-name">${esc(destName)}</div>
-        <div class="col-dest-sub">${f.atd ? getActualText(f) : (f.est_departure ? getAnnouncedText(f) : esc(f.airline))}</div>
-      </div>
-      <div class="col-time">${esc(f.std||'—')}</div>
-      <div><span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${getRiskShort(cls)} · ${proba}</span></div>
-      <div><span class="layer-badge">${layer}</span></div>
-    </div>`;
-  }).join('');
-}
-
-function setFilter(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  renderAllFlights();
+  if (isGone(f)) return 'DÉCOLLÉ';
+  if (f.est_departure) return `${short ? 'PRÉV' : 'PRÉVU'} ${f.est_departure}`;
+  if (f.estimated_schedule) return 'ESTIMÉ';
+  const s = norm(f.airport_status);
+  if (s.startsWith('embarq')) return short ? 'EMBARQ.' : 'EMBARQUEMENT';
+  if (s.startsWith('enreg') && s.includes('termin')) return short ? 'ENREG. FIN' : 'ENREG. TERMINÉ';
+  if (s.startsWith('enreg')) return short ? 'ENREG.' : 'ENREGISTREMENT';
+  return 'À L\'HEURE';
 }
 
 // ══════════════════════════════════════════
-// SEARCH
+// Palettes : seuls les caractères qui changent basculent
 // ══════════════════════════════════════════
-function onSearchInput(val) {
-  const sug = document.getElementById('suggestions');
-  const popup = document.getElementById('results-popup');
-  popup.classList.remove('show');
-  if (val.length < 2) { sug.classList.remove('show'); return; }
+const CHARSET = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:+-.%';
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const v = val.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-  const flights = getFilteredByDate();
-
-  // Check city map first
-  const cityIatas = [];
-  for (const [city, iatas] of Object.entries(CITY_MAP)) {
-    const normCity = city.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if (normCity.includes(v) || v.includes(normCity.split(' ')[0])) {
-      cityIatas.push(...iatas);
-    }
+function setFlap(el, text, width, delay = 0) {
+  const target = String(text).toUpperCase().padEnd(width).slice(0, width);
+  el.setAttribute('aria-label', String(text).trim());
+  while (el.children.length < width) {
+    const ch = document.createElement('span');
+    ch.className = 'ch blank';
+    ch.setAttribute('aria-hidden', 'true');
+    ch.dataset.c = ' ';
+    ch.textContent = ' ';
+    el.appendChild(ch);
   }
-
-  // Destinations matching
-  const destMap = {};
-  flights.forEach(f => {
-    const iata = f.destination_iata||'';
-    const destName = cleanDest(f.destination, iata);
-    const normDest = destName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if (cityIatas.includes(iata) || normDest.includes(v) || iata.toLowerCase().includes(v)) {
-      destMap[iata] = destName;
-    }
+  while (el.children.length > width) el.lastChild.remove();
+  [...el.children].forEach((ch, i) => {
+    const c = target[i];
+    if (ch.dataset.c === c && !ch.dataset.busy) return;
+    if (reduceMotion) { paint(ch, c); return; }
+    flipTo(ch, c, delay + i * 22);
   });
-
-  // Flight number matching
-  const flightMatches = flights.filter(f => (f.flight_iata||'').toLowerCase().includes(v));
-
-  const destItems = Object.entries(destMap).slice(0,5).map(([iata, name]) => `
-    <div class="suggestion-item" onclick="selectDestinationAt(${flightIndex(flights.find(f => (f.destination_iata||'') === iata))})">
-      <div class="suggestion-left">
-        <span class="suggestion-iata">${esc(iata)}</span>
-        <div><div class="suggestion-name">${esc(name)}</div></div>
-      </div>
-    </div>`).join('');
-
-  const flightItems = flightMatches.slice(0,3).map(f => {
-    const logo = getAirlineLogo(f.airline);
-    return `
-    <div class="suggestion-item" onclick="showModalAt(${flightIndex(f)})">
-      <div class="suggestion-left">
-        ${logo ? `<img src="${logo}" style="width:24px;height:24px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'" alt="">` : ''}
-        <span class="suggestion-iata">${esc(f.flight_iata)}</span>
-        <div>
-          <div class="suggestion-name">${esc(f.airline)}</div>
-          <div class="suggestion-sub">${esc(cleanDest(f.destination,f.destination_iata))} · ${esc(f.std)}</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const html = destItems + flightItems;
-  if (html) { sug.innerHTML = html; sug.classList.add('show'); }
-  else sug.classList.remove('show');
 }
 
-function selectDestinationAt(i) {
-  const first = allFlights[i];
-  if (!first) return;
-  const iata = first.destination_iata, name = cleanDest(first.destination, iata);
-  document.getElementById('search-input').value = name;
-  document.getElementById('suggestions').classList.remove('show');
-  const matches = getFilteredByDate().filter(f => f.destination_iata === iata);
-  if (matches.length === 1) showModal(matches[0]);
-  else showResultsPopup(`${matches.length} vols vers ${name}`, matches);
+function paint(ch, c) {
+  ch.dataset.c = c;
+  ch.textContent = c;
+  ch.classList.toggle('blank', c === ' ');
 }
 
-function showModalAt(i) { if (allFlights[i]) showModal(allFlights[i]); }
-
-function showResultsPopup(title, flights) {
-  document.getElementById('results-title').textContent = title;
-  document.getElementById('flight-options').innerHTML = flights
-    .sort((a,b) => (a.std||'').localeCompare(b.std||''))
-    .map(f => {
-      const cls = getRiskClass(f);
-      const logo = getAirlineLogo(f.airline);
-      return `
-      <div class="flight-option" onclick="showModalAt(${flightIndex(f)})">
-        <div class="flight-opt-left">
-          ${logo ? `<img class="airline-logo" src="${logo}" onerror="this.style.display='none'" alt="">` : ''}
-          <div>
-            <div class="flight-num">${esc(f.flight_iata)}</div>
-            <div class="flight-sub">${esc(f.airline)}</div>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${Math.round(f.probabilite_retard||0)}%</span>
-          <div class="flight-time-big">${esc(f.std||'—')}</div>
-        </div>
-      </div>`;
-    }).join('');
-  document.getElementById('results-popup').classList.add('show');
-}
-
-function doSearch() {
-  const val = document.getElementById('search-input').value.trim();
-  if (!val) return;
-  onSearchInput(val);
+function flipTo(ch, c, delay) {
+  const run = (ch._run || 0) + 1;
+  ch._run = run;
+  ch.dataset.busy = '1';
+  let steps = 3 + Math.floor(Math.random() * 4);
+  setTimeout(function step() {
+    if (ch._run !== run) return;               // une nouvelle valeur est arrivée entre-temps
+    const last = steps-- <= 0;
+    paint(ch, last ? c : CHARSET[1 + Math.floor(Math.random() * (CHARSET.length - 1))]);
+    ch.classList.remove('turn'); void ch.offsetWidth; ch.classList.add('turn');
+    if (last) { delete ch.dataset.busy; return; }
+    setTimeout(step, 60);
+  }, delay);
 }
 
 // ══════════════════════════════════════════
-// MODAL
+// Chargement
 // ══════════════════════════════════════════
-function showModal(flight) {
-  document.getElementById('suggestions').classList.remove('show');
-  document.getElementById('results-popup').classList.remove('show');
+async function load() {
+  try {
+    const res = await fetch(`${DATA_URL}?t=${Date.now()}`, {cache:'no-store'});
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    if (state.generatedAt === data.generated_at) return;
+    state.data = data;
+    state.flights = data.flights || [];
+    state.generatedAt = data.generated_at;
+    render();
+  } catch (e) {
+    if (!state.data) {
+      document.getElementById('board-sub').textContent = 'Les prédictions n\'ont pas pu être chargées. Nouvel essai dans quelques minutes.';
+    }
+  }
+}
 
-  const cls = getRiskClass(flight);
-  const layer = getLayerBadge(flight.prediction_type);
-  const proba = Math.round(flight.probabilite_retard||0);
-  const logo = getAirlineLogo(flight.airline);
-  const cityImg = getCityImage(flight.destination, flight.destination_iata);
-  const destName = cleanDest(flight.destination, flight.destination_iata);
-  const weatherIcon = getWeatherIcon(flight.weather_label);
+function dayFlights() {
+  const day = parisDate(state.day);
+  return state.flights.filter(f => f.date === day).sort((a, b) => a.std.localeCompare(b.std) || a.flight_iata.localeCompare(b.flight_iata));
+}
 
-  const layerDescs = {'J-1': flight.estimated_schedule ? 'Prédiction de la veille, sur le programme estimé d\'après la semaine dernière' : 'Prédiction effectuée la veille',
-    'Jour J':'Prédiction effectuée le jour du vol','T-2h':'Prédiction affinée moins de 2h30 avant le départ',
-    'Annonce':'Retard annoncé par l\'aéroport de Bordeaux'};
+function matches(f, q) {
+  if (!q) return true;
+  const qn = norm(q), compact = qn.replace(/ /g, '');
+  if (norm(f.flight_iata).replace(/ /g, '').includes(compact)) return true;
+  if (norm(destName(f)).includes(qn) || norm(f.destination).includes(qn)) return true;
+  if ((f.destination_iata || '').toLowerCase() === compact) return true;
+  const alias = CITY_ALIASES[qn.replace(/ /g, '_')];
+  return Boolean(alias && alias.includes(f.destination_iata));
+}
 
-  document.getElementById('modal-content').innerHTML = `
-    <div class="modal-hero">
-      <img class="modal-hero-img" src="${cityImg}" alt="${esc(destName)}" onerror="this.src='https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80'">
-      <div class="modal-hero-overlay"></div>
-      <div class="modal-hero-content">
-        <div>
-          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">✈ ${esc(flight.flight_iata||'—')}</div>
-          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;">${esc(destName)}</div>
-        </div>
-        ${logo ? `<img class="modal-airline-logo" src="${logo}" onerror="this.style.display='none'" alt="${esc(flight.airline)}">` : ''}
-      </div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
+// ══════════════════════════════════════════
+// Rendu
+// ══════════════════════════════════════════
+function render() {
+  const all = dayFlights();
+  renderCounters(all);
+  renderTimeline(all);
+  renderBoard(all);
+  const t = state.generatedAt ? String(state.generatedAt).slice(11, 16) : '';
+  document.getElementById('updated-label').textContent = t ? `Données de ${t} · il est` : 'Il est';
+  if (state.data?.model?.auc) {
+    document.getElementById('model-note').textContent =
+      'Prédictions issues d\'une forêt aléatoire entraînée sur l\'historique des départs de Bordeaux depuis avril 2026. ' +
+      `Testée sur les quatre dernières semaines, elle place un vol qui sera en retard au-dessus d'un vol à l'heure dans ${Math.round(state.data.model.auc * 100)} % des cas.`;
+  }
+}
+
+function renderCounters(all) {
+  const live = all.filter(f => !isGone(f) && !isCancelled(f));
+  setFlap(document.getElementById('c-upcoming'), String(live.length).padStart(3), 3);
+  setFlap(document.getElementById('c-risk'), String(live.filter(f => riskOf(f).level >= 3).length).padStart(3), 3, 120);
+  setFlap(document.getElementById('c-announced'), String(live.filter(f => hasNum(f.announced_delay) && f.announced_delay >= 5).length).padStart(3), 3, 240);
+  setFlap(document.getElementById('c-gone'), String(all.filter(isGone).length).padStart(3), 3, 360);
+}
+
+// Frise de 05:00 (ou de l'heure du premier vol s'il part plus tôt) à 24:00,
+// un trait par vol, hauteur selon le risque.
+const T_END = 24 * 60;
+let tStart = 5 * 60;
+const hourWidth = () => (window.innerWidth < 640 ? 52 : 58);
+const trackX = m => (Math.min(Math.max(m, tStart), T_END) - tStart) / 60 * hourWidth() + 12;
+
+function renderTimeline(all) {
+  const track = document.getElementById('track');
+  const first = Math.min(...all.map(f => toMinutes(f.std)), 5 * 60);
+  const start = Math.floor(first / 60) * 60;
+  if (start !== tStart) { tStart = start; track.removeAttribute('data-built'); }
+  track.style.width = `${(T_END - tStart) / 60 * hourWidth() + 24}px`;
+  if (!track.dataset.built) {
+    let html = '';
+    for (let h = tStart / 60; h <= 24; h++) {
+      html += `<div class="grid" style="left:${trackX(h * 60)}px"></div>`;
+      html += `<div class="hour" style="left:${trackX(h * 60)}px">${String(h % 24).padStart(2, '0')}h</div>`;
+    }
+    html += '<div class="now" id="now-line"><span></span></div>';
+    track.innerHTML = html;
+    track.dataset.built = '1';
+  }
+  const existing = new Map([...track.querySelectorAll('.tick')].map(t => [t.dataset.key, t]));
+  const seen = new Set();
+  const perMinute = {};  // vols à la même minute : décalés de quelques pixels
+  all.forEach(f => {
+    const key = `${f.date}|${f.flight_iata}`;
+    seen.add(key);
+    const m = toMinutes(f.std);
+    const n = perMinute[m] = (perMinute[m] || 0) + 1;
+    let tick = existing.get(key);
+    if (!tick) {
+      tick = document.createElement('button');
+      tick.className = 'tick';
+      tick.type = 'button';
+      tick.dataset.key = key;
+      tick.style.height = '0px';
+      track.appendChild(tick);
+    }
+    const lvl = riskOf(f).level;
+    tick.dataset.level = lvl;
+    tick.classList.toggle('gone', isGone(f) || isCancelled(f));
+    tick.style.left = `${trackX(m) + (n - 1) * 5}px`;
+    tick.title = `${f.std} · ${f.flight_iata} · ${destName(f)} · ${Math.round(f.probabilite_retard)} %`;
+    tick.setAttribute('aria-label', tick.title);
+    tick.onclick = () => openDrawer(f);
+    requestAnimationFrame(() => requestAnimationFrame(() => { tick.style.height = `${12 + lvl * 13}px`; }));
+  });
+  existing.forEach((t, k) => { if (!seen.has(k)) t.remove(); });
+  updateNow(true);
+}
+
+function updateNow(scroll) {
+  const line = document.getElementById('now-line');
+  if (!line) return;
+  const now = parisNow();
+  const show = state.day === 0 && now.minutes >= tStart;
+  line.style.display = show ? 'block' : 'none';
+  const box = document.getElementById('track-scroll');
+  if (!show) { if (scroll) box.scrollTo({left:0}); return; }
+  const left = trackX(now.minutes);
+  line.style.left = `${left}px`;
+  line.querySelector('span').textContent = now.hhmm;
+  if (scroll) box.scrollTo({left:Math.max(0, left - box.clientWidth * 0.3), behavior:reduceMotion ? 'auto' : 'smooth'});
+}
+
+function rowHTML(f) {
+  const r = riskOf(f), gone = isGone(f) || isCancelled(f);
+  return `
+    <li><button type="button" class="row${gone ? ' gone' : ''}" data-level="${gone ? 0 : r.level}">
+      <span class="flap md" data-flap="time"></span>
+      <span class="flight">${esc(f.flight_iata)}<span class="airline">${esc(f.airline)}</span></span>
+      <span class="flap md" data-flap="dest"></span>
+      <span class="risk">
+        <span class="meter${gone ? ' muted' : ''}" data-level="${r.level}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="pct">${Math.round(f.probabilite_retard)} %</span>
+        <span class="word">${r.word}</span>
+        <span class="sr-only">Risque ${r.word.toLowerCase()}</span>
+      </span>
+      <span class="flap sm${gone ? ' dim' : ''}" data-flap="status"></span>
+    </button></li>`;
+}
+
+// Garde les palettes des lignes déjà affichées : seules les valeurs modifiées basculent.
+function renderRows(ul, list) {
+  const narrow = window.innerWidth < 760;
+  const destW = narrow ? 13 : 18;
+  const previous = new Map([...ul.querySelectorAll('.row')].map(b => [b.dataset.key, b]));
+  const frag = document.createDocumentFragment();
+  list.forEach((f, idx) => {
+    const key = `${f.date}|${f.flight_iata}`;
+    const tmp = document.createElement('template');
+    tmp.innerHTML = rowHTML(f).trim();
+    const li = tmp.content.firstChild;
+    const btn = li.querySelector('.row');
+    const old = previous.get(key);
+    if (old) {
+      ['time', 'dest', 'status'].forEach(name =>
+        btn.querySelector(`[data-flap="${name}"]`).replaceWith(old.querySelector(`[data-flap="${name}"]`)));
+      btn.querySelector('[data-flap="status"]').classList.toggle('dim', btn.classList.contains('gone'));
+    }
+    btn.dataset.key = key;
+    btn.addEventListener('click', () => openDrawer(f));
+    const delay = old ? 0 : Math.min(idx, 18) * 45;
+    setFlap(btn.querySelector('[data-flap="time"]'), f.std, 5, delay);
+    setFlap(btn.querySelector('[data-flap="dest"]'), destName(f), destW, delay + 60);
+    setFlap(btn.querySelector('[data-flap="status"]'), statusText(f, narrow), narrow ? 10 : 16, delay + 120);
+    frag.appendChild(li);
+  });
+  ul.replaceChildren(frag);
+}
+
+function renderBoard(all) {
+  const visible = all.filter(f => matches(f, state.query));
+  const live = visible.filter(f => !isGone(f) && !isCancelled(f) && (!state.onlyRisk || riskOf(f).level >= 3));
+  const gone = visible.filter(f => isGone(f) || isCancelled(f));
+  const estimated = all.some(f => f.estimated_schedule);
+
+  document.getElementById('board-title').textContent = state.day === 0 ? 'Prochains départs' : 'Départs de demain';
+  document.getElementById('board-sub').textContent =
+    `${frenchDate(parisDate(state.day))} · ${live.length} vol${live.length > 1 ? 's' : ''}` +
+    (estimated ? ' · programme estimé d\'après la semaine dernière' : '');
+
+  const ul = document.getElementById('rows');
+  if (live.length) {
+    renderRows(ul, live);
+  } else {
+    const why = state.query ? ['Aucun vol ne correspond à cette recherche.', 'Essayez une ville, un code d\'aéroport ou un numéro de vol.']
+      : state.onlyRisk ? ['Aucun vol à risque élevé.', 'Tous les départs restants ont un risque faible ou modéré.']
+      : all.length ? ['Tous les vols de la journée sont partis.', 'Le programme de demain est dans l\'onglet Demain.']
+      : ['Pas encore de prédictions pour ce jour.', 'Elles apparaîtront au prochain passage de collecte.'];
+    ul.innerHTML = `<li class="empty"><strong>${why[0]}</strong>${why[1]}</li>`;
+  }
+
+  document.getElementById('departed').hidden = gone.length === 0;
+  document.getElementById('departed-summary').textContent = `Vols partis (${gone.length}) · prédiction et retard réel`;
+  renderRows(document.getElementById('rows-gone'), gone);
+}
+
+// ══════════════════════════════════════════
+// Panneau de détail
+// ══════════════════════════════════════════
+const TYPE_TEXT = {
+  'J-1':'la veille du vol', 'Jour J':'le jour du vol', 'T-2h':'moins de 2 h 30 avant le départ',
+  'Annonce':'d\'après l\'annonce de l\'aéroport',
+};
+
+function openDrawer(f) {
+  const r = riskOf(f), p = Math.round(f.probabilite_retard);
+  const drawer = document.getElementById('drawer');
+  const facts = [];
+  if (hasNum(f.avg_delay_flight)) facts.push(['Retard moyen de ce vol', `${Math.round(f.avg_delay_flight)} min`]);
+  if (hasNum(f.avg_delay_airline)) facts.push([`Retard moyen ${esc(f.airline)}`, `${Math.round(f.avg_delay_airline)} min`]);
+  const weather = [f.weather_label, hasNum(f.weather_temp) ? `${Math.round(f.weather_temp)} °C` : '',
+    hasNum(f.weather_wind) ? `vent ${Math.round(f.weather_wind)} km/h` : '',
+    hasNum(f.weather_precip) && Number(f.weather_precip) > 0 ? `${Number(f.weather_precip)} mm` : ''].filter(Boolean).join(', ');
+  if (weather) facts.push(['Météo prévue à Bordeaux', esc(weather)]);
+  facts.push(['Prédiction faite', `${esc(String(f.predicted_at).slice(11, 16))}, ${TYPE_TEXT[f.prediction_type] || ''}`]);
+
+  let note = '';
+  if (isCancelled(f)) {
+    note = '<div class="note neutral">Vol annoncé annulé par l\'aéroport.</div>';
+  } else if (f.atd && hasNum(f.delay_min)) {
+    const d = Number(f.delay_min), late = d >= 15, said = p >= 50;
+    note = `<div class="note${late ? '' : ' neutral'}">Parti à ${esc(f.atd)}, ${d > 0 ? `avec ${d} min de retard` : d < 0 ? `${-d} min en avance` : 'à l\'heure'}. `
+      + `Le modèle donnait ${p} % de risque : ${late === said ? 'prédiction confirmée.' : 'prédiction démentie.'}</div>`;
+  } else if (isGone(f)) {
+    note = '<div class="note neutral">Décollé. L\'heure exacte de départ sera connue ce soir.</div>';
+  } else if (hasNum(f.announced_delay) && Number(f.announced_delay) !== 0) {
+    note = `<div class="note">L'aéroport annonce un départ à ${esc(f.est_departure)}, soit ${signed(Number(f.announced_delay))} min.</div>`;
+  } else if (f.estimated_schedule) {
+    note = '<div class="note neutral">Programme estimé : ce vol a décollé le même jour la semaine dernière. L\'aéroport le confirmera demain matin.</div>';
+  }
+
+  drawer.innerHTML = `
+    <button type="button" class="close" aria-label="Fermer" id="d-close">✕</button>
+    <div class="d-head">
+      <span class="d-flight">${esc(f.flight_iata)} · ${esc(f.airline)}</span>
+      <span class="d-dest" id="d-dest">${esc(destName(f))}</span>
+      <span class="flap lg" id="d-time"></span>
+      <span class="label">${esc(frenchDate(f.date))}</span>
     </div>
-
-    <div class="modal-body">
-      <div class="modal-sub">${esc(flight.airline)} · Départ <strong>${esc(flight.std||'—')}</strong> · ${esc(flight.date)}${flight.atd ? ` · <strong>${getActualText(flight)}</strong>` : (flight.est_departure ? ` · <strong>${getAnnouncedText(flight)}</strong>` : '')}</div>
-
-      <div class="source-row">
-        <span class="source-chip"><span class="source-dot"></span>Prédiction ${esc(layer)} · ${esc(String(flight.predicted_at||'').substring(11,16))}</span>
-        <span style="font-size:12px;color:var(--text-muted);">${layerDescs[layer]||layer}</span>
+    <div class="d-proba">
+      <span class="label">Risque de retard</span>
+      <div class="big">
+        <span class="flap lg${r.level === 4 ? ' accent' : ''}" id="d-pct"></span>
+        <span class="meter" data-level="${r.level}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
       </div>
-
-      <div class="verdict-block ${cls}">
-        <div class="verdict-emoji">${{green:'✅',yellow:'🟡',orange:'⚠️',red:'🚨'}[cls]}</div>
-        <div class="verdict-label">${getVerdictText(cls)}</div>
-        <div class="verdict-sub">${flight.atd ? getActualText(flight) : 'Seuil : retard de 15 minutes ou plus au départ'}</div>
-        <div class="proba-label"><span>Probabilité d'un retard de 15 min ou plus</span><span style="font-weight:700;">${proba}%</span></div>
-        <div class="proba-bar-track"><div class="proba-bar-fill ${cls}" id="proba-fill" style="width:0%"></div></div>
-      </div>
-
-      <div class="detail-grid">
-        <div class="detail-card">
-          <div class="detail-label">Retard moyen du vol</div>
-          <div class="detail-value">${flight.avg_delay_flight ? Math.round(flight.avg_delay_flight)+' min' : '—'}</div>
-          <div class="detail-sub">Historique sur ce n° de vol</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-label">Retard moyen compagnie</div>
-          <div class="detail-value">${flight.avg_delay_airline ? Math.round(flight.avg_delay_airline)+' min' : '—'}</div>
-          <div class="detail-sub">${esc(flight.airline)}</div>
-        </div>
-
-        <div class="meteo-card">
-          <div class="meteo-header">
-            <div class="meteo-icon">${weatherIcon}</div>
-            <div>
-              <div class="meteo-label-main">${esc(flight.weather_label||'—')}</div>
-              <div class="meteo-label-sub">Météo prévue à Bordeaux au départ</div>
-            </div>
-          </div>
-          <div class="meteo-grid">
-            <div class="meteo-item">
-              <div class="meteo-item-val">🌡️ ${hasNum(flight.weather_temp) ? Math.round(flight.weather_temp)+'°C' : '—'}</div>
-              <div class="meteo-item-label">Température</div>
-            </div>
-            <div class="meteo-item">
-              <div class="meteo-item-val">💨 ${hasNum(flight.weather_wind) ? Math.round(flight.weather_wind)+' km/h' : '—'}</div>
-              <div class="meteo-item-label">Vent</div>
-            </div>
-            <div class="meteo-item">
-              <div class="meteo-item-val">🌧️ ${hasNum(flight.weather_precip) ? Number(flight.weather_precip)+' mm' : '—'}</div>
-              <div class="meteo-item-label">Précipitations</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <p>${r.word} : probabilité que ce vol parte avec 15 minutes de retard ou plus.</p>
+      ${note}
     </div>
-  `;
-
-  document.getElementById('modal').classList.add('show');
-  setTimeout(() => {
-    const fill = document.getElementById('proba-fill');
-    if (fill) fill.style.width = proba+'%';
-  }, 150);
+    <ul class="facts">${facts.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('')}</ul>`;
+  setFlap(drawer.querySelector('#d-time'), f.std, 5, 80);
+  setFlap(drawer.querySelector('#d-pct'), `${String(p).padStart(2)}%`, 4, 160);
+  drawer.querySelector('#d-close').onclick = closeDrawer;
+  drawer._opener = document.activeElement;
+  drawer.classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+  drawer.focus();
 }
 
-function closeModal() { document.getElementById('modal').classList.remove('show'); }
-function closeModalOverlay(e) { if (e.target.id==='modal') closeModal(); }
-
-// ══════════════════════════════════════════
-// PAGES
-// ══════════════════════════════════════════
-function showPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (page === 'all') renderAllFlights();
+function closeDrawer() {
+  const drawer = document.getElementById('drawer');
+  if (!drawer.classList.contains('open')) return;
+  drawer.classList.remove('open');
+  document.getElementById('scrim').classList.remove('open');
+  drawer._opener?.focus?.();
 }
 
 // ══════════════════════════════════════════
-// INIT
+// Interactions
 // ══════════════════════════════════════════
-loadData();
+document.getElementById('scrim').onclick = closeDrawer;
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+
+const searchBox = document.getElementById('search-box');
+const search = document.getElementById('search');
+search.addEventListener('input', () => {
+  state.query = search.value.trim();
+  searchBox.classList.toggle('has-value', Boolean(state.query));
+  if (state.data) renderBoard(dayFlights());
+});
+document.getElementById('search-clear').onclick = e => {
+  e.preventDefault();
+  search.value = '';
+  search.dispatchEvent(new Event('input'));
+  search.focus();
+};
+
+document.querySelectorAll('.segmented button').forEach(btn => btn.addEventListener('click', () => {
+  state.day = Number(btn.dataset.day);
+  document.querySelectorAll('.segmented button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+  document.getElementById('rows').replaceChildren();
+  document.getElementById('rows-gone').replaceChildren();
+  if (state.data) render();
+}));
+
+document.getElementById('only-risk').addEventListener('click', e => {
+  state.onlyRisk = !state.onlyRisk;
+  e.currentTarget.setAttribute('aria-pressed', String(state.onlyRisk));
+  if (state.data) renderBoard(dayFlights());
+});
+
+// Changement de mise en page (mobile / bureau) : on reconstruit frise et tableau.
+let lastWidth = window.innerWidth;
+window.addEventListener('resize', () => {
+  const crossed = w => [w < 640, w < 760].join();
+  if (crossed(lastWidth) === crossed(window.innerWidth)) return;
+  lastWidth = window.innerWidth;
+  document.getElementById('track').removeAttribute('data-built');
+  document.getElementById('rows').replaceChildren();
+  document.getElementById('rows-gone').replaceChildren();
+  if (state.data) render();
+});
+
+// Horloge : la palette bascule quand la minute change.
+function tick() {
+  setFlap(document.getElementById('clock'), parisNow().hhmm, 5);
+  updateNow(false);
+}
+
+setFlap(document.getElementById('brand-flap'), 'BOD', 3, 200);
+tick();
+setInterval(tick, 10000);
+load();
+setInterval(load, REFRESH_MS);
 </script>
 </body>
 </html>
