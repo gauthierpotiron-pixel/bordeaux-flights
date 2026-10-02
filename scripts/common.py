@@ -1,5 +1,6 @@
 """Chemins, lecture/écriture CSV et petites fonctions partagées par les scripts."""
 import csv
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,6 +16,7 @@ FLIGHT_FIELDS = [
     "non_schengen", "weather_temp", "weather_precip", "weather_wind", "weather_gusts",
     "weather_visibility", "weather_code", "weather_label", "school_holiday", "day_of_week",
     "is_commercial", "departure_id", "is_primary", "n_snapshots", "first_collected_at", "last_collected_at",
+    "airport_status", "est_departure",
 ]
 
 # Retards hors de cette plage : gardés mais signalés (souvent de l'aviation privée).
@@ -77,6 +79,11 @@ def weather_label(code):
     return "Pluie"
 
 
+def is_commercial(flight_iata):
+    """Numéro de vol complet (compagnie + numéro), ce qui exclut l'aviation privée et les codes seuls."""
+    return int(bool(re.match(r"^[A-Z0-9]{2}\d{1,4}[A-Z]?$", flight_iata or "")))
+
+
 def mark_primary(flights):
     """Un seul numéro par départ physique (date, heure, destination) est principal."""
     groups = {}
@@ -87,7 +94,9 @@ def mark_primary(flights):
         def score(f):
             listed = set(f["codeshares"].replace(" ", "").replace("|", ",").split(","))
             others = {g["flight_iata"] for g in group if g is not f}
-            return (others <= listed, f["atd"] != "", str(f["is_commercial"]) == "1", f["flight_iata"])
+            # Puis : le numéro affiché par l'aéroport, celui qui a un départ réel, l'ordre alphabétique.
+            return (others <= listed, bool(f.get("airport_status")), f["atd"] != "",
+                    str(f["is_commercial"]) == "1", f["flight_iata"])
         best = max(group, key=score)
         for f in group:
             f["is_primary"] = int(f is best)

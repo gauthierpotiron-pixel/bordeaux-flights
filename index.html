@@ -505,11 +505,18 @@ function getRiskShort(cls) {
 }
 
 function getLayerBadge(type) {
-  return ['J-1','Jour J','T-2h'].includes(type) ? type : 'Jour J';
+  return ['J-1','Jour J','T-2h','Annonce'].includes(type) ? type : 'Jour J';
 }
 
 function getVerdictText(cls) {
   return {green:'Vol à l\'heure probable ✓',yellow:'Retard possible',orange:'Retard probable',red:'Retard très probable'}[cls];
+}
+
+// Retard annoncé par l'aéroport (« Prévu à HH:MM »).
+function getAnnouncedText(f) {
+  if (!f.est_departure) return '';
+  const d = Number(f.announced_delay);
+  return `Annoncé à ${esc(f.est_departure)}` + (Number.isFinite(d) ? ` (${d > 0 ? '+' : ''}${d} min)` : '');
 }
 
 // Vol déjà parti : retard réel constaté.
@@ -563,7 +570,9 @@ function renderAllFlights() {
   let flights = getFilteredByDate();
   if (currentFilter !== 'all') flights = flights.filter(f => getRiskClass(f) === currentFilter);
   flights.sort((a,b) => (a.std||'').localeCompare(b.std||''));
-  subtitle.textContent = `${flights.length} vol${flights.length>1?'s':''} · ${parisDate(selectedDate === 'today' ? 0 : 1)}`;
+  const estimated = flights.some(f => f.estimated_schedule);
+  subtitle.textContent = `${flights.length} vol${flights.length>1?'s':''} · ${parisDate(selectedDate === 'today' ? 0 : 1)}`
+    + (estimated ? ' · programme estimé d\'après la semaine dernière' : '');
   if (flights.length === 0) {
     list.innerHTML = currentFilter === 'all'
       ? '<div class="empty-state"><h3>Pas encore de prédictions</h3><p>Les vols de cette date apparaîtront après le prochain passage de collecte.</p></div>'
@@ -584,7 +593,7 @@ function renderAllFlights() {
       </div>
       <div>
         <div class="col-dest-name">${esc(destName)}</div>
-        <div class="col-dest-sub">${f.atd ? getActualText(f) : esc(f.airline)}</div>
+        <div class="col-dest-sub">${f.atd ? getActualText(f) : (f.est_departure ? getAnnouncedText(f) : esc(f.airline))}</div>
       </div>
       <div class="col-time">${esc(f.std||'—')}</div>
       <div><span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${getRiskShort(cls)} · ${proba}</span></div>
@@ -722,7 +731,9 @@ function showModal(flight) {
   const destName = cleanDest(flight.destination, flight.destination_iata);
   const weatherIcon = getWeatherIcon(flight.weather_label);
 
-  const layerDescs = {'J-1':'Prédiction effectuée la veille','Jour J':'Prédiction effectuée le jour du vol','T-2h':'Prédiction affinée moins de 2h30 avant le départ'};
+  const layerDescs = {'J-1': flight.estimated_schedule ? 'Prédiction de la veille, sur le programme estimé d\'après la semaine dernière' : 'Prédiction effectuée la veille',
+    'Jour J':'Prédiction effectuée le jour du vol','T-2h':'Prédiction affinée moins de 2h30 avant le départ',
+    'Annonce':'Retard annoncé par l\'aéroport de Bordeaux'};
 
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-hero">
@@ -739,7 +750,7 @@ function showModal(flight) {
     </div>
 
     <div class="modal-body">
-      <div class="modal-sub">${esc(flight.airline)} · Départ <strong>${esc(flight.std||'—')}</strong> · ${esc(flight.date)}${flight.atd ? ` · <strong>${getActualText(flight)}</strong>` : ''}</div>
+      <div class="modal-sub">${esc(flight.airline)} · Départ <strong>${esc(flight.std||'—')}</strong> · ${esc(flight.date)}${flight.atd ? ` · <strong>${getActualText(flight)}</strong>` : (flight.est_departure ? ` · <strong>${getAnnouncedText(flight)}</strong>` : '')}</div>
 
       <div class="source-row">
         <span class="source-chip"><span class="source-dot"></span>Prédiction ${esc(layer)} · ${esc(String(flight.predicted_at||'').substring(11,16))}</span>
