@@ -1,0 +1,70 @@
+# Collecte les départs de BOD, prédit les retards et publie data/predictions.json.
+# 3 passages par jour = 93 appels AviationStack maximum par mois (quota gratuit : 100).
+# Si tu changes le nombre de passages, mets à jour RUNS_PER_DAY dans scripts/pipeline.py.
+name: Pipeline BOD
+
+on:
+  schedule:
+    - cron: "45 3 * * *"    # 05:45 à Bordeaux (04:45 en hiver) : programme de la journée
+    - cron: "45 10 * * *"   # 12:45 (11:45 en hiver) : mise à jour de l'après-midi
+    - cron: "30 20 * * *"   # 22:30 (21:30 en hiver) : retards réels de la journée
+  workflow_dispatch:
+    inputs:
+      collect:
+        description: "Appeler AviationStack (consomme 1 appel du quota mensuel)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Collecte et prédiction
+        env:
+          AVIATIONSTACK_KEY: ${{ secrets.AVIATIONSTACK_KEY }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.collect }}" = "false" ]; then
+            python scripts/pipeline.py --no-collect
+          else
+            python scripts/pipeline.py
+          fi
+
+      # Toujours enregistrer, même en cas d'erreur, pour ne pas perdre le compteur d'appels.
+      - name: Enregistrer les données
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "Aucun changement."
+            exit 0
+          fi
+          git commit -m "Données du $(TZ=Europe/Paris date +'%Y-%m-%d %H:%M')"
+          git pull --rebase
+          git push
+
+      # Les commits faits par le workflow ne relancent pas GitHub Pages tout seuls.
+      - name: Republier le site
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "Republication non demandée."

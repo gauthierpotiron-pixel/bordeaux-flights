@@ -1,0 +1,30 @@
+{
+  "train_rows": 6682,
+  "test_rows": 1238,
+  "test_from": "2026-09-04",
+  "test_to": "2026-10-02",
+  "late_share_test": 0.378,
+  "auc": 0.708,
+  "auc_airline_only": 0.619,
+  "brier": 0.208,
+  "importance": {
+    "flight_rate": 0.163,
+    "flight_avg_delay": 0.162,
+    "weather_temp": 0.096,
+    "hour": 0.095,
+    "destination_rate": 0.092,
+    "airline_rate_14d": 0.052,
+    "weather_wind": 0.05,
+    "bod_rate_7d": 0.047,
+    "weather_gusts": 0.045,
+    "airline_rate": 0.045,
+    "airline_avg_delay": 0.041,
+    "weather_visibility": 0.039,
+    "flight_count": 0.034,
+    "day_of_week": 0.023,
+    "weather_code": 0.009,
+    "holiday": 0.004,
+    "non_schengen": 0.004,
+    "weather_precip": 0.0
+  }
+}

@@ -289,7 +289,7 @@
   <div class="stats-strip" id="stats-strip">
     <div class="stat-item"><span class="stat-num" id="stat-total">—</span><div class="stat-label">Vols prédits</div></div>
     <div class="stat-item"><span class="stat-num" id="stat-risk">—</span><div class="stat-label">Risque élevé</div></div>
-    <div class="stat-item"><span class="stat-num" id="stat-ontime">—</span><div class="stat-label">À l'heure</div></div>
+    <div class="stat-item"><span class="stat-num" id="stat-ontime">—</span><div class="stat-label">Risque faible</div></div>
     <div class="stat-item"><span class="stat-num" id="stat-updated">—</span><div class="stat-label">Mis à jour</div></div>
   </div>
 </div>
@@ -303,15 +303,15 @@
     </div>
     <div class="filter-chips">
       <button class="chip active" onclick="setFilter('all',this)">Tous</button>
-      <button class="chip green" onclick="setFilter('green',this)">🟢 À l'heure</button>
-      <button class="chip yellow" onclick="setFilter('yellow',this)">🟡 Léger</button>
-      <button class="chip orange" onclick="setFilter('orange',this)">🟠 Modéré</button>
-      <button class="chip red" onclick="setFilter('red',this)">🔴 Sévère</button>
+      <button class="chip green" onclick="setFilter('green',this)">🟢 Risque faible</button>
+      <button class="chip yellow" onclick="setFilter('yellow',this)">🟡 Possible</button>
+      <button class="chip orange" onclick="setFilter('orange',this)">🟠 Probable</button>
+      <button class="chip red" onclick="setFilter('red',this)">🔴 Très probable</button>
     </div>
   </div>
   <div class="flights-table">
     <div class="flight-row-header">
-      <div>Vol</div><div>Destination</div><div>Heure</div><div>Prédiction</div><div>Source</div>
+      <div>Vol</div><div>Destination</div><div>Heure</div><div>Prédiction</div><div>Moment</div>
     </div>
     <div id="flights-list"><div class="loading"><div class="loading-spinner"></div><p>Chargement...</p></div></div>
   </div>
@@ -326,9 +326,19 @@
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
-const SHEET_ID = '1jio63rPoaQ2AIRti5p5KFmPtCxuEMhBeZBsd1_5VINU';
-const SHEET_NAME = 'predictions';
-const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+// Fichier écrit par scripts/pipeline.py (GitHub Actions), 3 fois par jour.
+const DATA_URL = 'data/predictions.json';
+
+// Les textes viennent d'AviationStack : on les échappe avant de les insérer dans la page.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Date du jour à Bordeaux, au format AAAA-MM-JJ.
+function parisDate(offsetDays = 0) {
+  const d = new Date(Date.now() + offsetDays * 86400000);
+  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Paris'}).format(d);
+}
 
 // ── CITY → IATA MAP ──
 const CITY_MAP = {
@@ -458,66 +468,60 @@ function cleanDest(destination, iata) {
 // STATE
 // ══════════════════════════════════════════
 let allFlights = [];
+let meta = {};
 let currentFilter = 'all';
-let selectedDate = 'tomorrow'; // today or tomorrow
+let selectedDate = 'today'; // today or tomorrow
 
 // ══════════════════════════════════════════
 // LOAD DATA
 // ══════════════════════════════════════════
 async function loadData() {
   try {
-    const res = await fetch(API_URL);
-    const text = await res.text();
-    const json = JSON.parse(text.replace(/^.*?({.*}).*$/s,'$1'));
-    const cols = json.table.cols.map(c => c.label);
-    allFlights = json.table.rows.map(row => {
-      const obj = {};
-      cols.forEach((col,i) => { obj[col] = row.c[i] ? row.c[i].v : null; });
-      return obj;
-    });
+    const res = await fetch(`${DATA_URL}?t=${Date.now()}`);
+    if (!res.ok) throw new Error(res.status);
+    meta = await res.json();
+    allFlights = meta.flights || [];
     renderAllFlights();
     updateStats();
   } catch(e) {
     document.getElementById('flights-list').innerHTML = `
       <div class="empty-state"><h3>Données indisponibles</h3>
-      <p>Rends le Google Sheets public : Fichier → Partager → Tout le monde avec le lien.</p></div>`;
+      <p>Les prédictions n'ont pas pu être chargées. Réessaie dans quelques minutes.</p></div>`;
   }
 }
 
 // ══════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════
-function getRiskClass(label) {
-  if (!label) return 'green';
-  const l = label.toLowerCase();
-  if (l.includes('sévère')||l.includes('severe')) return 'red';
-  if (l.includes('modéré')||l.includes('modere')) return 'orange';
-  if (l.includes('léger')||l.includes('leger')||l.includes('possible')) return 'yellow';
-  return 'green';
+// Niveau de risque calculé par le pipeline à partir de la probabilité de retard ≥ 15 min.
+function getRiskClass(flight) {
+  return ['green','yellow','orange','red'].includes(flight.risk_level) ? flight.risk_level : 'green';
 }
 
 function getRiskEmoji(cls) { return {green:'🟢',yellow:'🟡',orange:'🟠',red:'🔴'}[cls]||'⚪'; }
 
-function getRiskShort(label) {
-  if (!label) return 'À l\'heure';
-  const l = label.toLowerCase();
-  if (l.includes('sévère')) return 'Retard sévère';
-  if (l.includes('modéré')) return 'Retard modéré';
-  if (l.includes('possible')) return 'Léger possible';
-  if (l.includes('léger')) return 'Retard léger';
-  return 'À l\'heure';
+function getRiskShort(cls) {
+  return {green:'Risque faible',yellow:'Retard possible',orange:'Retard probable',red:'Retard très probable'}[cls];
 }
 
 function getLayerBadge(type) {
-  if (!type) return 'J-1';
-  if (type.includes('T-2')||type.includes('h-2')||type.includes('H-2')) return 'T-2h';
-  if (type.includes('30')||type.includes('M-30')) return 'M-30';
-  return 'J-1';
+  return ['J-1','Jour J','T-2h'].includes(type) ? type : 'Jour J';
 }
 
 function getVerdictText(cls) {
-  return {green:'Vol à l\'heure ✓',yellow:'Retard possible',orange:'Retard modéré prévu',red:'Retard sévère prévu'}[cls];
+  return {green:'Vol à l\'heure probable ✓',yellow:'Retard possible',orange:'Retard probable',red:'Retard très probable'}[cls];
 }
+
+// Vol déjà parti : retard réel constaté.
+function getActualText(f) {
+  if (!f.atd) return '';
+  const d = Number(f.delay_min);
+  return `Parti à ${esc(f.atd)}` + (Number.isFinite(d) ? ` (${d > 0 ? '+' : ''}${d} min)` : '');
+}
+
+function flightIndex(f) { return allFlights.indexOf(f); }
+
+function hasNum(v) { return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)); }
 
 // ══════════════════════════════════════════
 // DATE TAB
@@ -530,13 +534,11 @@ function selectDateTab(tab, btn) {
   document.getElementById('suggestions').classList.remove('show');
   document.getElementById('search-input').value = '';
   updateStats();
+  renderAllFlights();
 }
 
 function getFilteredByDate() {
-  if (allFlights.length === 0) return [];
-  const dates = [...new Set(allFlights.map(f => f.date).filter(Boolean))].sort();
-  if (dates.length === 0) return allFlights;
-  const targetDate = selectedDate === 'today' ? dates[0] : (dates[1] || dates[0]);
+  const targetDate = parisDate(selectedDate === 'today' ? 0 : 1);
   return allFlights.filter(f => f.date === targetDate);
 }
 
@@ -546,9 +548,9 @@ function getFilteredByDate() {
 function updateStats() {
   const flights = getFilteredByDate();
   document.getElementById('stat-total').textContent = flights.length || '—';
-  document.getElementById('stat-risk').textContent = flights.filter(f => getRiskClass(f.label_retard)==='red').length || '0';
-  document.getElementById('stat-ontime').textContent = flights.filter(f => getRiskClass(f.label_retard)==='green').length || '0';
-  const t = flights[0]?.predicted_at;
+  document.getElementById('stat-risk').textContent = flights.filter(f => getRiskClass(f)==='red').length || '0';
+  document.getElementById('stat-ontime').textContent = flights.filter(f => getRiskClass(f)==='green').length || '0';
+  const t = meta.generated_at;
   document.getElementById('stat-updated').textContent = t ? String(t).substring(11,16) : '—';
 }
 
@@ -559,31 +561,33 @@ function renderAllFlights() {
   const list = document.getElementById('flights-list');
   const subtitle = document.getElementById('all-subtitle');
   let flights = getFilteredByDate();
-  if (currentFilter !== 'all') flights = flights.filter(f => getRiskClass(f.label_retard) === currentFilter);
+  if (currentFilter !== 'all') flights = flights.filter(f => getRiskClass(f) === currentFilter);
   flights.sort((a,b) => (a.std||'').localeCompare(b.std||''));
-  subtitle.textContent = `${flights.length} vol${flights.length>1?'s':''} · ${flights[0]?.date||''}`;
+  subtitle.textContent = `${flights.length} vol${flights.length>1?'s':''} · ${parisDate(selectedDate === 'today' ? 0 : 1)}`;
   if (flights.length === 0) {
-    list.innerHTML = '<div class="empty-state"><h3>Aucun vol</h3><p>Essayez un autre filtre.</p></div>';
+    list.innerHTML = currentFilter === 'all'
+      ? '<div class="empty-state"><h3>Pas encore de prédictions</h3><p>Les vols de cette date apparaîtront après le prochain passage de collecte.</p></div>'
+      : '<div class="empty-state"><h3>Aucun vol</h3><p>Essayez un autre filtre.</p></div>';
     return;
   }
   list.innerHTML = flights.map(f => {
-    const cls = getRiskClass(f.label_retard);
+    const cls = getRiskClass(f);
     const layer = getLayerBadge(f.prediction_type);
     const proba = f.probabilite_retard ? Math.round(f.probabilite_retard)+'%' : '—';
     const logo = getAirlineLogo(f.airline);
     const destName = cleanDest(f.destination, f.destination_iata);
     return `
-    <div class="flight-row" onclick='showModal(${JSON.stringify(f).replace(/'/g,"&#39;")})'>
+    <div class="flight-row" onclick="showModalAt(${flightIndex(f)})">
       <div class="col-flight">
         ${logo ? `<img class="col-airline-logo" src="${logo}" onerror="this.style.display='none'" alt="">` : ''}
-        ${f.flight_iata||'—'}
+        ${esc(f.flight_iata||'—')}
       </div>
       <div>
-        <div class="col-dest-name">${destName}</div>
-        <div class="col-dest-sub">${f.airline||''}</div>
+        <div class="col-dest-name">${esc(destName)}</div>
+        <div class="col-dest-sub">${f.atd ? getActualText(f) : esc(f.airline)}</div>
       </div>
-      <div class="col-time">${f.std||'—'}</div>
-      <div><span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${getRiskShort(f.label_retard)} · ${proba}</span></div>
+      <div class="col-time">${esc(f.std||'—')}</div>
+      <div><span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${getRiskShort(cls)} · ${proba}</span></div>
       <div><span class="layer-badge">${layer}</span></div>
     </div>`;
   }).join('');
@@ -632,23 +636,23 @@ function onSearchInput(val) {
   const flightMatches = flights.filter(f => (f.flight_iata||'').toLowerCase().includes(v));
 
   const destItems = Object.entries(destMap).slice(0,5).map(([iata, name]) => `
-    <div class="suggestion-item" onclick="selectDestination('${iata}','${name.replace(/'/g,"\\'")}')">
+    <div class="suggestion-item" onclick="selectDestinationAt(${flightIndex(flights.find(f => (f.destination_iata||'') === iata))})">
       <div class="suggestion-left">
-        <span class="suggestion-iata">${iata}</span>
-        <div><div class="suggestion-name">${name}</div></div>
+        <span class="suggestion-iata">${esc(iata)}</span>
+        <div><div class="suggestion-name">${esc(name)}</div></div>
       </div>
     </div>`).join('');
 
   const flightItems = flightMatches.slice(0,3).map(f => {
     const logo = getAirlineLogo(f.airline);
     return `
-    <div class="suggestion-item" onclick="selectFlightByIata('${f.flight_iata}')">
+    <div class="suggestion-item" onclick="showModalAt(${flightIndex(f)})">
       <div class="suggestion-left">
         ${logo ? `<img src="${logo}" style="width:24px;height:24px;object-fit:contain;border-radius:4px;" onerror="this.style.display='none'" alt="">` : ''}
-        <span class="suggestion-iata">${f.flight_iata}</span>
+        <span class="suggestion-iata">${esc(f.flight_iata)}</span>
         <div>
-          <div class="suggestion-name">${f.airline||''}</div>
-          <div class="suggestion-sub">${cleanDest(f.destination,f.destination_iata)} · ${f.std||''}</div>
+          <div class="suggestion-name">${esc(f.airline)}</div>
+          <div class="suggestion-sub">${esc(cleanDest(f.destination,f.destination_iata))} · ${esc(f.std)}</div>
         </div>
       </div>
     </div>`;
@@ -659,42 +663,38 @@ function onSearchInput(val) {
   else sug.classList.remove('show');
 }
 
-function selectDestination(iata, name) {
+function selectDestinationAt(i) {
+  const first = allFlights[i];
+  if (!first) return;
+  const iata = first.destination_iata, name = cleanDest(first.destination, iata);
   document.getElementById('search-input').value = name;
   document.getElementById('suggestions').classList.remove('show');
-  const flights = getFilteredByDate();
-  const matches = flights.filter(f => f.destination_iata === iata);
-  if (matches.length === 0) showResultsPopup('Aucun vol trouvé',[]);
-  else if (matches.length === 1) showModal(matches[0]);
+  const matches = getFilteredByDate().filter(f => f.destination_iata === iata);
+  if (matches.length === 1) showModal(matches[0]);
   else showResultsPopup(`${matches.length} vols vers ${name}`, matches);
 }
 
-function selectFlightByIata(iata) {
-  document.getElementById('suggestions').classList.remove('show');
-  const flights = getFilteredByDate();
-  const flight = flights.find(f => f.flight_iata === iata);
-  if (flight) showModal(flight);
-}
+function showModalAt(i) { if (allFlights[i]) showModal(allFlights[i]); }
 
 function showResultsPopup(title, flights) {
   document.getElementById('results-title').textContent = title;
   document.getElementById('flight-options').innerHTML = flights
     .sort((a,b) => (a.std||'').localeCompare(b.std||''))
     .map(f => {
-      const cls = getRiskClass(f.label_retard);
+      const cls = getRiskClass(f);
       const logo = getAirlineLogo(f.airline);
       return `
-      <div class="flight-option" onclick='showModal(${JSON.stringify(f).replace(/'/g,"&#39;")})'>
+      <div class="flight-option" onclick="showModalAt(${flightIndex(f)})">
         <div class="flight-opt-left">
           ${logo ? `<img class="airline-logo" src="${logo}" onerror="this.style.display='none'" alt="">` : ''}
           <div>
-            <div class="flight-num">${f.flight_iata}</div>
-            <div class="flight-sub">${f.airline||''}</div>
+            <div class="flight-num">${esc(f.flight_iata)}</div>
+            <div class="flight-sub">${esc(f.airline)}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="risk-badge ${cls}">${getRiskEmoji(cls)} ${Math.round(f.probabilite_retard||0)}%</span>
-          <div class="flight-time-big">${f.std||'—'}</div>
+          <div class="flight-time-big">${esc(f.std||'—')}</div>
         </div>
       </div>`;
     }).join('');
@@ -714,7 +714,7 @@ function showModal(flight) {
   document.getElementById('suggestions').classList.remove('show');
   document.getElementById('results-popup').classList.remove('show');
 
-  const cls = getRiskClass(flight.label_retard);
+  const cls = getRiskClass(flight);
   const layer = getLayerBadge(flight.prediction_type);
   const proba = Math.round(flight.probabilite_retard||0);
   const logo = getAirlineLogo(flight.airline);
@@ -722,35 +722,35 @@ function showModal(flight) {
   const destName = cleanDest(flight.destination, flight.destination_iata);
   const weatherIcon = getWeatherIcon(flight.weather_label);
 
-  const layerDescs = {'J-1':'Prédiction effectuée la veille','T-2h':'Prédiction affinée 2h avant le départ','M-30':'Confirmation en temps réel 30 min avant'};
+  const layerDescs = {'J-1':'Prédiction effectuée la veille','Jour J':'Prédiction effectuée le jour du vol','T-2h':'Prédiction affinée moins de 2h30 avant le départ'};
 
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-hero">
-      <img class="modal-hero-img" src="${cityImg}" alt="${destName}" onerror="this.src='https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80'">
+      <img class="modal-hero-img" src="${cityImg}" alt="${esc(destName)}" onerror="this.src='https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80'">
       <div class="modal-hero-overlay"></div>
       <div class="modal-hero-content">
         <div>
-          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">✈ ${flight.flight_iata||'—'}</div>
-          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;">${destName}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">✈ ${esc(flight.flight_iata||'—')}</div>
+          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;">${esc(destName)}</div>
         </div>
-        ${logo ? `<img class="modal-airline-logo" src="${logo}" onerror="this.style.display='none'" alt="${flight.airline}">` : ''}
+        ${logo ? `<img class="modal-airline-logo" src="${logo}" onerror="this.style.display='none'" alt="${esc(flight.airline)}">` : ''}
       </div>
       <button class="modal-close" onclick="closeModal()">✕</button>
     </div>
 
     <div class="modal-body">
-      <div class="modal-sub">${flight.airline||''} · Départ <strong>${flight.std||'—'}</strong> · ${flight.date||''}</div>
+      <div class="modal-sub">${esc(flight.airline)} · Départ <strong>${esc(flight.std||'—')}</strong> · ${esc(flight.date)}${flight.atd ? ` · <strong>${getActualText(flight)}</strong>` : ''}</div>
 
       <div class="source-row">
-        <span class="source-chip"><span class="source-dot"></span>Source : ${layer}</span>
+        <span class="source-chip"><span class="source-dot"></span>Prédiction ${esc(layer)} · ${esc(String(flight.predicted_at||'').substring(11,16))}</span>
         <span style="font-size:12px;color:var(--text-muted);">${layerDescs[layer]||layer}</span>
       </div>
 
       <div class="verdict-block ${cls}">
         <div class="verdict-emoji">${{green:'✅',yellow:'🟡',orange:'⚠️',red:'🚨'}[cls]}</div>
         <div class="verdict-label">${getVerdictText(cls)}</div>
-        <div class="verdict-sub">${flight.label_retard||''}</div>
-        <div class="proba-label"><span>Probabilité de retard</span><span style="font-weight:700;">${proba}%</span></div>
+        <div class="verdict-sub">${flight.atd ? getActualText(flight) : 'Seuil : retard de 15 minutes ou plus au départ'}</div>
+        <div class="proba-label"><span>Probabilité d'un retard de 15 min ou plus</span><span style="font-weight:700;">${proba}%</span></div>
         <div class="proba-bar-track"><div class="proba-bar-fill ${cls}" id="proba-fill" style="width:0%"></div></div>
       </div>
 
@@ -763,28 +763,28 @@ function showModal(flight) {
         <div class="detail-card">
           <div class="detail-label">Retard moyen compagnie</div>
           <div class="detail-value">${flight.avg_delay_airline ? Math.round(flight.avg_delay_airline)+' min' : '—'}</div>
-          <div class="detail-sub">${flight.airline||''}</div>
+          <div class="detail-sub">${esc(flight.airline)}</div>
         </div>
 
         <div class="meteo-card">
           <div class="meteo-header">
             <div class="meteo-icon">${weatherIcon}</div>
             <div>
-              <div class="meteo-label-main">${flight.weather_label||'—'}</div>
+              <div class="meteo-label-main">${esc(flight.weather_label||'—')}</div>
               <div class="meteo-label-sub">Météo prévue à Bordeaux au départ</div>
             </div>
           </div>
           <div class="meteo-grid">
             <div class="meteo-item">
-              <div class="meteo-item-val">🌡️ ${flight.weather_temp ? Math.round(flight.weather_temp)+'°C' : '—'}</div>
+              <div class="meteo-item-val">🌡️ ${hasNum(flight.weather_temp) ? Math.round(flight.weather_temp)+'°C' : '—'}</div>
               <div class="meteo-item-label">Température</div>
             </div>
             <div class="meteo-item">
-              <div class="meteo-item-val">💨 ${flight.weather_wind ? Math.round(flight.weather_wind)+' km/h' : '—'}</div>
+              <div class="meteo-item-val">💨 ${hasNum(flight.weather_wind) ? Math.round(flight.weather_wind)+' km/h' : '—'}</div>
               <div class="meteo-item-label">Vent</div>
             </div>
             <div class="meteo-item">
-              <div class="meteo-item-val">🌧️ ${flight.weather_precip != null ? flight.weather_precip+' mm' : '—'}</div>
+              <div class="meteo-item-val">🌧️ ${hasNum(flight.weather_precip) ? Number(flight.weather_precip)+' mm' : '—'}</div>
               <div class="meteo-item-label">Précipitations</div>
             </div>
           </div>
