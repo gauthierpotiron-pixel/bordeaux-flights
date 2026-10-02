@@ -110,7 +110,7 @@ def clean_flights(weather):
             f["delay_min"] = ""
             f["delay_flag"] = ""
         f.update(weather_fields(weather.get(f"{f['date']}T{f['std'][:2]}")))
-        f["is_commercial"] = is_commercial(f["flight_iata"])
+        f["is_commercial"] = is_commercial(f["flight_iata"], f["airline"])
         flights.append(f)
 
     mark_primary(flights)

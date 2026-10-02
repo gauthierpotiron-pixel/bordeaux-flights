@@ -30,8 +30,8 @@ from zoneinfo import ZoneInfo
 
 import airport
 import model
-from common import (CLEAN, DATA, FLIGHT_FIELDS, LAT, LON, delay_between, delay_flag, hhmm, is_commercial,
-                    mark_primary, read_csv, weather_label, write_csv)
+from common import (CLEAN, DATA, FLIGHT_FIELDS, LAT, LON, assign_operators, delay_between, delay_flag, hhmm,
+                    is_commercial, mark_primary, read_csv, weather_label, write_csv)
 
 PARIS = ZoneInfo("Europe/Paris")
 FLIGHTS_CSV = CLEAN / "flights.csv"
@@ -396,8 +396,11 @@ def main():
     elif "--no-collect" not in sys.argv:
         sys.exit("Préciser --source airport, --source aviationstack ou --no-collect.")
     enrich(flights, flights, now)
+    renamed = assign_operators(flights)
+    if renamed:
+        print(f"Compagnie opérante : {renamed} vols renommés (numéro d'un partenaire commercial remplacé).")
     for f in flights:
-        f["is_commercial"] = is_commercial(f["flight_iata"])
+        f["is_commercial"] = is_commercial(f["flight_iata"], f["airline"])
     mark_primary(flights)
     flights.sort(key=lambda f: (f["date"], f["std"], f["flight_iata"] or f["flight_icao"]))
     write_csv(FLIGHTS_CSV, flights, FLIGHT_FIELDS)
