@@ -12299,4 +12299,4 @@ date,flight_iata,flight_icao,airline,destination,destination_iata,std,atd,delay_
 2026-10-03,EC1855,,easyJet,Son Sant Joan Airport,PMI,19:45,,,,scheduled,,,,Non,23.5,0.0,15.1,23.4,11340.0,3,Nuageux,Non,samedi,1,2026-10-03|19:45|PMI,1,4,2026-10-03 01:47:19,2026-10-03 20:41:31,Décollé,
 2026-10-03,EC1905,,easyJet,Menara,RAK,20:15,,,,scheduled,,,,Oui,22.1,0.0,12.9,20.9,36960.0,3,Nuageux,Non,samedi,1,2026-10-03|20:15|RAK,1,4,2026-10-03 01:47:19,2026-10-03 20:41:31,Décollé,
 2026-10-03,V72442,,Volotea,Son Sant Joan Airport,PMI,20:55,,,,scheduled,,,,Non,22.1,0.0,12.9,20.9,36960.0,3,Nuageux,Non,samedi,1,2026-10-03|20:55|PMI,1,4,2026-10-03 01:47:19,2026-10-03 20:41:31,Retardé,
-2026-10-03,U22424,,easyJet,Luton Airport,LTN,21:45,,,,scheduled,,,,Oui,21.3,0.0,16.2,25.6,32780.0,3,Nuageux,Non,samedi,1,2026-10-03|21:45|LTN,1,4,2026-10-03 01:47:19,2026-10-03 20:41:31,Retardé,
+2026-10-03,U22424,,easyJet,Luton Airport,LTN,21:45,,,,scheduled,,,,Oui,21.4,0.0,15.9,25.6,32780.0,3,Nuageux,Non,samedi,1,2026-10-03|21:45|LTN,1,4,2026-10-03 01:47:19,2026-10-03 20:41:31,Retardé,
