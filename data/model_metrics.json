@@ -1,12 +1,12 @@
 {
   "train_rows": 6520,
-  "test_rows": 1230,
+  "test_rows": 1272,
   "test_from": "2026-09-05",
   "test_to": "2026-10-03",
-  "late_share_test": 0.385,
-  "auc": 0.716,
-  "auc_airline_only": 0.618,
-  "brier": 0.205,
+  "late_share_test": 0.393,
+  "auc": 0.713,
+  "auc_airline_only": 0.613,
+  "brier": 0.207,
   "importance": {
     "flight_avg_delay": 0.168,
     "flight_rate": 0.163,
