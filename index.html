@@ -1,753 +1,789 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BOD Départs · Risque de retard</title>
-<meta name="description" content="Probabilité de retard de chaque départ de Bordeaux-Mérignac, mise à jour toutes les heures.">
-<meta name="theme-color" content="#0a0c10">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --night: #0a0c10;
-    --panel: #0f1217;
-    --tile: #1a1e25;
-    --tile-low: #15181e;
-    --line: rgba(236,232,223,0.07);
-    --line-strong: rgba(236,232,223,0.14);
-    --ink: #ece8df;
-    --ink-2: #a3a7ae;
-    --ink-3: #636871;
-    --accent: #ffb43c;          /* seule couleur : le risque */
-    --accent-soft: rgba(255,180,60,0.14);
-    --mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --sans: 'IBM Plex Sans', system-ui, sans-serif;
-    --label: 'Barlow Condensed', 'IBM Plex Sans', sans-serif;
-    --gutter: clamp(16px, 4vw, 40px);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html { -webkit-text-size-adjust:100%; }
-  body { background:var(--night); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; min-height:100vh; overflow-x:hidden; }
-  button, input { font:inherit; color:inherit; }
-  .wrap { max-width:1120px; margin:0 auto; padding:0 var(--gutter); }
-  .label { font-family:var(--label); font-weight:600; font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-3); }
-
-  /* ── Palettes ───────────────────────────── */
-  .flap { display:inline-flex; gap:2px; font-family:var(--mono); font-weight:500; line-height:1; white-space:pre; }
-  .flap .ch {
-    position:relative; display:inline-block; width:1.05em; padding:0.28em 0 0.24em; text-align:center;
-    background:linear-gradient(var(--tile) 0 50%, var(--tile-low) 50% 100%);
-    border-radius:2px; color:var(--ink);
-  }
-  .flap .ch::after { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,0.55); }
-  .flap .ch.blank { color:transparent; }
-  .flap .ch.turn { animation:turn 70ms linear; }
-  @keyframes turn { 0%{transform:scaleY(1)} 50%{transform:scaleY(0.15)} 100%{transform:scaleY(1)} }
-  .flap.sm { font-size:13px; }
-  .flap.md { font-size:15px; }
-  .flap.lg { font-size:clamp(26px, 6vw, 40px); }
-  .flap.accent .ch { color:var(--accent); }
-  .flap.dim .ch { color:var(--ink-3); }
-
-  /* ── En-tête ────────────────────────────── */
-  header.top { border-bottom:1px solid var(--line); background:rgba(10,12,16,0.92); position:sticky; top:0; z-index:20; backdrop-filter:blur(8px); }
-  header.top .wrap { display:flex; align-items:center; justify-content:space-between; gap:16px; height:60px; }
-  .brand { display:flex; align-items:center; gap:12px; }
-  .brand-name { font-family:var(--label); font-weight:600; font-size:15px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-2); }
-  .clock { display:flex; align-items:center; gap:12px; }
-  .clock .label { display:none; }
-  @media (min-width:640px) { .clock .label { display:block; } }
-
-  /* ── Introduction ───────────────────────── */
-  .intro { padding-top:48px; padding-bottom:28px; display:grid; gap:28px; }
-  .intro h1 { font-family:var(--label); font-weight:600; font-size:clamp(34px, 7vw, 64px); line-height:0.95; letter-spacing:0.01em; text-transform:uppercase; max-width:12ch; }
-  .intro h1 em { font-style:normal; color:var(--accent); }
-  .intro p { color:var(--ink-2); max-width:52ch; }
-  .controls { display:flex; flex-wrap:wrap; gap:12px; align-items:stretch; }
-  .search { flex:1 1 280px; display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line-strong); border-radius:6px; padding:0 14px; min-height:48px; }
-  .search:focus-within { border-color:var(--ink-3); }
-  .search input { flex:1; background:none; border:none; outline:none; font-family:var(--mono); font-size:15px; letter-spacing:0.02em; text-transform:uppercase; min-width:0; }
-  .search input::placeholder { color:var(--ink-3); text-transform:none; font-family:var(--sans); letter-spacing:0; }
-  .search input::-webkit-search-cancel-button { display:none; }
-  .search .clear { background:none; border:none; color:var(--ink-3); cursor:pointer; font-family:var(--mono); padding:6px; display:none; }
-  .search.has-value .clear { display:block; }
-  .segmented { display:flex; border:1px solid var(--line-strong); border-radius:6px; overflow:hidden; }
-  .segmented button { background:none; border:none; padding:0 18px; min-height:48px; cursor:pointer; font-family:var(--label); font-weight:600; font-size:14px; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-3); }
-  .segmented button + button { border-left:1px solid var(--line-strong); }
-  .segmented button[aria-pressed="true"] { background:var(--ink); color:var(--night); }
-
-  /* ── Compteurs ──────────────────────────── */
-  .counters { display:grid; grid-template-columns:repeat(4, 1fr); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .counter { padding:20px 0 18px; display:grid; gap:10px; }
-  .counter + .counter { border-left:1px solid var(--line); padding-left:20px; }
-  @media (max-width:640px) {
-    .counters { grid-template-columns:repeat(2, 1fr); }
-    .counter:nth-child(3) { border-left:none; padding-left:0; }
-    .counter:nth-child(n+3) { border-top:1px solid var(--line); }
-  }
-
-  /* ── Frise horaire ──────────────────────── */
-  .timeline { padding-top:28px; padding-bottom:8px; }
-  .timeline-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:12px; gap:12px; flex-wrap:wrap; }
-  .timeline-head .hint { font-size:13px; color:var(--ink-3); }
-  .track-scroll { overflow-x:auto; padding-bottom:10px; scrollbar-width:thin; scrollbar-color:var(--tile) transparent; -webkit-overflow-scrolling:touch; }
-  .track { position:relative; height:96px; }
-  .track .hour { position:absolute; bottom:0; font-family:var(--mono); font-size:11px; color:var(--ink-3); transform:translateX(-50%); }
-  .track .grid { position:absolute; top:0; bottom:20px; width:1px; background:var(--line); }
-  .track .tick { position:absolute; bottom:22px; width:4px; margin-left:-2px; border-radius:1px; background:var(--ink-3); border:none; cursor:pointer; padding:0; transition:height 600ms cubic-bezier(.2,.8,.2,1), background 300ms; }
-  .track .tick[data-level="1"] { background:rgba(255,180,60,0.35); }
-  .track .tick[data-level="2"] { background:rgba(255,180,60,0.55); }
-  .track .tick[data-level="3"] { background:rgba(255,180,60,0.8); }
-  .track .tick[data-level="4"] { background:var(--accent); }
-  .track .tick.gone { background:var(--tile) !important; }
-  .track .tick:hover, .track .tick:focus-visible { outline:1px solid var(--ink); outline-offset:2px; }
-  .track .now { position:absolute; top:0; bottom:20px; width:1px; background:var(--ink); }
-  .track .now span { position:absolute; top:-2px; left:6px; font-family:var(--mono); font-size:11px; color:var(--ink); white-space:nowrap; }
-
-  /* ── Tableau ────────────────────────────── */
-  .board { padding-top:28px; padding-bottom:12px; }
-  .board-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
-  .board-head h2 { font-family:var(--label); font-weight:600; font-size:22px; letter-spacing:0.08em; text-transform:uppercase; }
-  .board-head .sub { color:var(--ink-3); font-size:13px; }
-  .board-head .sub::first-letter { text-transform:uppercase; }
-  .toggle { background:none; border:1px solid var(--line-strong); border-radius:999px; padding:6px 14px; font-size:13px; color:var(--ink-2); cursor:pointer; }
-  .toggle[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
-  .cols, .row { display:grid; grid-template-columns:6.4em 6.2em minmax(0,1fr) 13em 14.4em; align-items:center; column-gap:18px; }
-  .cols { padding:0 12px 8px; border-bottom:1px solid var(--line-strong); }
-  .rows { list-style:none; }
-  .row { width:100%; text-align:left; background:none; border:none; border-bottom:1px solid var(--line); padding:10px 12px; cursor:pointer; position:relative; }
-  .row:hover, .row:focus-visible { background:var(--panel); outline:none; }
-  .row[data-level="4"]::before { content:''; position:absolute; left:0; top:8px; bottom:8px; width:2px; background:var(--accent); }
-  .row .flight { font-family:var(--mono); font-size:13px; color:var(--ink-2); min-width:0; }
-  .row .airline { display:block; font-family:var(--sans); font-size:12px; color:var(--ink-3); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .row .flap { overflow:hidden; max-width:100%; }
-  .row.gone .flap .ch { color:var(--ink-3); }
-  .risk { display:flex; align-items:center; gap:10px; }
-  .meter { display:inline-flex; gap:3px; }
-  .meter i { width:14px; height:8px; border-radius:1px; background:var(--tile); }
-  .meter[data-level="1"] i:nth-child(-n+1) { background:rgba(255,180,60,0.45); }
-  .meter[data-level="2"] i:nth-child(-n+2) { background:rgba(255,180,60,0.65); }
-  .meter[data-level="3"] i:nth-child(-n+3) { background:rgba(255,180,60,0.85); }
-  .meter[data-level="4"] i { background:var(--accent); }
-  .meter.muted i { background:var(--tile) !important; }
-  .risk .pct { font-family:var(--mono); font-size:14px; min-width:4.2ch; text-align:right; }
-  .risk .word { font-size:12px; color:var(--ink-3); }
-  .row[data-level="4"] .pct { color:var(--accent); }
-  .row.gone .pct { color:var(--ink-3); }
-  .empty { padding:48px 12px; color:var(--ink-2); border-bottom:1px solid var(--line); }
-  .empty strong { display:block; color:var(--ink); font-weight:500; margin-bottom:4px; }
-  details.departed { margin-top:28px; }
-  details.departed summary { cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid var(--line); border-radius:6px; color:var(--ink-2); font-size:14px; }
-  details.departed summary::-webkit-details-marker { display:none; }
-  details.departed summary::before { content:'+'; font-family:var(--mono); color:var(--ink-3); }
-  details.departed[open] summary::before { content:'−'; }
-  details.departed .rows { margin-top:8px; }
-
-  @media (max-width:760px) {
-    .cols { display:none; }
-    .row { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"time dest dest" "flight risk status"; row-gap:8px; column-gap:12px; padding:12px 4px; }
-    .row > :nth-child(1) { grid-area:time; }
-    .row > :nth-child(2) { grid-area:flight; }
-    .row > :nth-child(3) { grid-area:dest; }
-    .row > :nth-child(4) { grid-area:risk; }
-    .row > :nth-child(5) { grid-area:status; justify-self:end; }
-    .row .airline { display:none; }
-    .risk { gap:8px; }
-    .risk .word { display:none; }
-    .meter { gap:2px; }
-    .meter i { width:8px; }
-    .risk .pct { min-width:3.6ch; }
-    .row .flap.sm { font-size:11.5px; }
-    .row[data-level="4"]::before { left:-6px; }
-  }
-
-  /* ── Panneau de détail ──────────────────── */
-  .scrim { position:fixed; inset:0; background:rgba(5,6,8,0.6); opacity:0; pointer-events:none; transition:opacity 200ms; z-index:40; }
-  .scrim.open { opacity:1; pointer-events:auto; }
-  .drawer {
-    position:fixed; top:0; right:0; bottom:0; width:min(460px, 100%); background:var(--panel); border-left:1px solid var(--line-strong);
-    transform:translateX(100%); visibility:hidden; transition:transform 260ms cubic-bezier(.2,.8,.2,1), visibility 0s 260ms;
-    z-index:50; overflow-y:auto; padding:24px var(--gutter) 40px; outline:none;
-  }
-  .drawer.open { transform:none; visibility:visible; transition:transform 260ms cubic-bezier(.2,.8,.2,1); }
-  @media (max-width:640px) {
-    .drawer { top:auto; width:100%; max-height:88vh; border-left:none; border-top:1px solid var(--line-strong); border-radius:12px 12px 0 0; transform:translateY(100%); }
-  }
-  .drawer .close { position:absolute; top:16px; right:16px; background:none; border:1px solid var(--line-strong); border-radius:6px; width:36px; height:36px; cursor:pointer; color:var(--ink-2); font-family:var(--mono); }
-  .d-head { display:grid; gap:10px; padding-right:44px; justify-items:start; }
-  .d-flight { font-family:var(--mono); font-size:13px; color:var(--ink-2); }
-  .d-dest { font-family:var(--label); font-weight:600; font-size:30px; line-height:1; text-transform:uppercase; letter-spacing:0.02em; }
-  .d-proba { margin:24px 0 8px; padding:20px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); display:grid; gap:12px; }
-  .d-proba .big { display:flex; align-items:center; gap:16px; }
-  .d-proba .meter i { width:22px; height:10px; }
-  .d-proba p { color:var(--ink-2); font-size:14px; }
-  .note { padding:12px 14px; background:var(--accent-soft); border-radius:6px; font-size:14px; color:var(--ink); }
-  .note.neutral { background:var(--tile-low); color:var(--ink-2); }
-  .facts { list-style:none; margin-top:12px; }
-  .facts li { display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px solid var(--line); font-size:14px; }
-  .facts li span:first-child { color:var(--ink-2); }
-  .facts li span:last-child { font-family:var(--mono); font-size:13px; text-align:right; }
-
-  /* ── Pied de page ───────────────────────── */
-  footer { margin-top:56px; border-top:1px solid var(--line); padding:28px 0 48px; color:var(--ink-3); font-size:13px; }
-  footer .wrap { display:grid; gap:10px; }
-  footer p { max-width:70ch; }
-
-  .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
-  @media (prefers-reduced-motion: reduce) {
-    .flap .ch.turn { animation:none; }
-    .drawer, .scrim, .track .tick { transition:none; }
-  }
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
+<x-dc>
+<helmet>
+<title>BOD Départs · Risque de retard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{background:#F5F3EE;color:#141824;font-family:'Geist',system-ui,sans-serif;font-size:15px;line-height:1.5;overflow-x:hidden}
+  a{color:oklch(0.52 0.15 255);text-decoration:none}
+  a:hover{color:#141824}
+  input::placeholder{color:#8A8F9A}
+  input::-webkit-search-cancel-button{display:none}
+  ::selection{background:oklch(0.88 0.06 255)}
+  @keyframes bodPulse{0%{box-shadow:0 0 0 0 oklch(0.52 0.15 255 / .5)}100%{box-shadow:0 0 0 10px oklch(0.52 0.15 255 / 0)}}
+  @keyframes bodRowIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes bodGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  @keyframes bodReveal{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+<script src="./bod-data.js"></script>
+<script src="./roll-text.js"></script>
+<script src="./image-slot.js"></script>
+</helmet>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand">
-      <span class="flap md" id="brand-flap" aria-hidden="true"></span>
-      <span class="brand-name">Départs · Mérignac</span>
-    </div>
-    <div class="clock">
-      <span class="label" id="updated-label">Heure</span>
-      <span class="flap md" id="clock" role="timer" aria-label="Heure à Bordeaux"></span>
+<header style="position:sticky; top:0; z-index:40; background:rgba(245,243,238,0.8); backdrop-filter:blur(14px) saturate(1.4); border-bottom:1px solid #E5E1D9;">
+  <div style="max-width:1200px; margin:0 auto; padding:0 clamp(16px,4vw,40px); height:64px; display:flex; align-items:center; gap:16px;">
+    <a href="#top" style="display:flex; align-items:center; gap:10px; color:#141824; flex:none;">
+      <span style="font-family:'Geist Mono',monospace; font-weight:600; font-size:13px; letter-spacing:0.06em; background:#141824; color:#F5F3EE; padding:6px 8px; border-radius:8px;">BOD</span>
+      <span style="font-weight:500; font-size:15px; white-space:nowrap;">Départs · Mérignac</span>
+    </a>
+    <nav style="flex:1 1 auto; min-width:0; display:flex; justify-content:center; gap:2px; overflow-x:auto; scrollbar-width:none;">
+      <a href="#frise" style="padding:8px 12px; border-radius:999px; font-size:14px; color:#545A68; white-space:nowrap; transition:background .2s, color .2s;" style-hover="background:#ECE9E2; color:#141824;">Frise</a>
+      <a href="#departs" style="padding:8px 12px; border-radius:999px; font-size:14px; color:#545A68; white-space:nowrap; transition:background .2s, color .2s;" style-hover="background:#ECE9E2; color:#141824;">Départs</a>
+      <a href="#destinations" style="padding:8px 12px; border-radius:999px; font-size:14px; color:#545A68; white-space:nowrap; transition:background .2s, color .2s;" style-hover="background:#ECE9E2; color:#141824;">Destinations</a>
+      <a href="#carte" style="padding:8px 12px; border-radius:999px; font-size:14px; color:#545A68; white-space:nowrap; transition:background .2s, color .2s;" style-hover="background:#ECE9E2; color:#141824;">Carte</a>
+    </nav>
+    <div style="display:flex; align-items:center; gap:10px; flex:none;">
+      <span style="width:8px; height:8px; border-radius:50%; background:oklch(0.52 0.15 255); animation:bodPulse 2s ease-out infinite;"></span>
+      <roll-text value="{{ clock }}" style="font-family:'Geist Mono',monospace; font-size:17px; font-weight:500;"></roll-text>
     </div>
   </div>
 </header>
 
-<main>
-  <section class="intro wrap">
-    <h1>Votre vol partira-t-il <em>à l'heure&nbsp;?</em></h1>
-    <p>Pour chaque départ de Bordeaux, la probabilité d'un retard de 15&nbsp;minutes ou plus. Le tableau se met à jour toutes les heures avec les annonces de l'aéroport.</p>
-    <div class="controls">
-      <label class="search" id="search-box">
-        <span class="sr-only">Ville ou numéro de vol</span>
-        <input id="search" type="search" placeholder="Ville ou numéro de vol (Lyon, U2 3407…)" autocomplete="off" spellcheck="false">
-        <button class="clear" type="button" id="search-clear" aria-label="Effacer la recherche">✕</button>
+<section id="top" style="position:relative; overflow:hidden;">
+  <canvas ref="{{ heroCanvas }}" aria-hidden="true" style="position:absolute; inset:0; width:100%; height:100%; display:{{ canvasDisplay }}; mask-image:linear-gradient(to bottom, #000 55%, transparent 100%);"></canvas>
+  <div style="position:relative; max-width:1200px; margin:0 auto; padding:clamp(48px,9vw,120px) clamp(16px,4vw,40px) clamp(28px,4vw,44px); display:grid; gap:clamp(20px,3vw,32px);">
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">
+      <span style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,0.7); border:1px solid #E5E1D9; font-size:13px; color:#545A68; backdrop-filter:blur(6px);">Données de <span style="font-family:'Geist Mono',monospace; color:{{ genInk }};">{{ genTime }}</span></span>
+      <span style="display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:rgba(255,255,255,0.7); border:1px solid #E5E1D9; font-size:13px; color:#545A68; backdrop-filter:blur(6px);">Mérignac · <span style="color:#141824;">{{ wxNow }}</span></span>
+    </div>
+    <h1 style="font-size:clamp(42px,7.6vw,96px); line-height:0.96; letter-spacing:-0.04em; font-weight:600; max-width:12ch; text-wrap:balance;">Votre vol partira-t-il <span style="color:oklch(0.52 0.15 255);">à l'heure&nbsp;?</span></h1>
+    <p style="font-size:clamp(16px,1.5vw,19px); color:#545A68; max-width:50ch; text-wrap:pretty;">Pour chaque départ de Bordeaux, la probabilité d'un retard de 15&nbsp;minutes ou plus. Mis à jour toutes les heures avec les annonces de l'aéroport.</p>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:stretch; max-width:760px;">
+      <label style="flex:1 1 300px; display:flex; align-items:center; gap:10px; background:#FFFFFF; border:1px solid #E5E1D9; border-radius:16px; padding:0 8px 0 18px; min-height:56px; box-shadow:0 10px 30px rgba(20,24,36,0.06); transition:box-shadow .25s, border-color .25s;" style-focus-within="border-color:oklch(0.52 0.15 255); box-shadow:0 0 0 4px oklch(0.52 0.15 255 / .12);">
+        <span style="width:10px; height:10px; border:2px solid #8A8F9A; border-radius:50%; flex:none;"></span>
+        <input type="search" value="{{ query }}" onChange="{{ onQuery }}" placeholder="Ville ou numéro de vol (Lyon, U2 3407…)" autocomplete="off" spellcheck="false" aria-label="Ville ou numéro de vol" style="flex:1; min-width:0; border:none; outline:none; background:none; font:inherit; font-size:16px; color:#141824;">
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+          <button type="button" onClick="{{ clearQuery }}" aria-label="Effacer la recherche" style="border:none; background:#F0EDE7; color:#545A68; width:36px; height:36px; border-radius:10px; cursor:pointer; font:inherit;">✕</button>
+        </sc-if>
       </label>
-      <div class="segmented" role="group" aria-label="Jour">
-        <button type="button" data-day="0" aria-pressed="true">Aujourd'hui</button>
-        <button type="button" data-day="1" aria-pressed="false">Demain</button>
+      <div role="group" aria-label="Jour" style="display:flex; padding:4px; background:#ECE9E2; border-radius:16px; gap:4px;">
+        <button type="button" onClick="{{ setDay0 }}" style="border:none; border-radius:12px; padding:0 18px; min-height:48px; cursor:pointer; font:inherit; font-size:14px; font-weight:500; background:{{ day0Bg }}; color:{{ day0Ink }}; box-shadow:{{ day0Sh }}; transition:background .25s, color .25s, box-shadow .25s;">Aujourd'hui</button>
+        <button type="button" onClick="{{ setDay1 }}" style="border:none; border-radius:12px; padding:0 18px; min-height:48px; cursor:pointer; font:inherit; font-size:14px; font-weight:500; background:{{ day1Bg }}; color:{{ day1Ink }}; box-shadow:{{ day1Sh }}; transition:background .25s, color .25s, box-shadow .25s;">Demain</button>
       </div>
     </div>
-  </section>
-
-  <section class="wrap" aria-label="Résumé">
-    <div class="counters">
-      <div class="counter"><span class="label">À venir</span><span class="flap lg" id="c-upcoming"></span></div>
-      <div class="counter"><span class="label">Risque élevé</span><span class="flap lg accent" id="c-risk"></span></div>
-      <div class="counter"><span class="label">Retards annoncés</span><span class="flap lg" id="c-announced"></span></div>
-      <div class="counter"><span class="label">Déjà partis</span><span class="flap lg dim" id="c-gone"></span></div>
-    </div>
-  </section>
-
-  <section class="timeline wrap" aria-label="Frise des départs">
-    <div class="timeline-head">
-      <span class="label">La journée, heure par heure</span>
-      <span class="hint">Plus le trait est haut et clair, plus le risque est élevé.</span>
-    </div>
-    <div class="track-scroll" id="track-scroll"><div class="track" id="track"></div></div>
-  </section>
-
-  <section class="board wrap" aria-labelledby="board-title">
-    <div class="board-head">
-      <div>
-        <h2 id="board-title">Prochains départs</h2>
-        <div class="sub" id="board-sub">Chargement…</div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(min(100%,170px), 1fr)); gap:1px; background:#E5E1D9; border:1px solid #E5E1D9; border-radius:20px; overflow:hidden; margin-top:clamp(8px,2vw,24px);">
+      <div style="background:rgba(255,255,255,0.82); backdrop-filter:blur(8px); padding:18px 20px; display:grid; gap:6px;">
+        <span style="font-size:13px; color:#6B7080;">À venir</span>
+        <roll-text value="{{ cUpcoming }}" delay="0" style="font-size:clamp(34px,4.4vw,48px); font-weight:600; letter-spacing:-0.03em; line-height:1;"></roll-text>
       </div>
-      <button type="button" class="toggle" id="only-risk" aria-pressed="false">Risque élevé seulement</button>
+      <div style="background:rgba(255,255,255,0.82); backdrop-filter:blur(8px); padding:18px 20px; display:grid; gap:6px;">
+        <span style="font-size:13px; color:#6B7080;">Risque élevé</span>
+        <roll-text value="{{ cRisk }}" delay="120" style="font-size:clamp(34px,4.4vw,48px); font-weight:600; letter-spacing:-0.03em; line-height:1; color:oklch(0.52 0.17 18);"></roll-text>
+      </div>
+      <div style="background:rgba(255,255,255,0.82); backdrop-filter:blur(8px); padding:18px 20px; display:grid; gap:6px;">
+        <span style="font-size:13px; color:#6B7080;">Retards annoncés</span>
+        <roll-text value="{{ cAnnounced }}" delay="240" style="font-size:clamp(34px,4.4vw,48px); font-weight:600; letter-spacing:-0.03em; line-height:1;"></roll-text>
+      </div>
+      <div style="background:rgba(255,255,255,0.82); backdrop-filter:blur(8px); padding:18px 20px; display:grid; gap:6px;">
+        <span style="font-size:13px; color:#6B7080;">Déjà partis</span>
+        <roll-text value="{{ cGone }}" delay="360" style="font-size:clamp(34px,4.4vw,48px); font-weight:600; letter-spacing:-0.03em; line-height:1; color:#8A8F9A;"></roll-text>
+      </div>
     </div>
-    <div class="cols label" aria-hidden="true"><span>Heure</span><span>Vol</span><span>Destination</span><span>Risque de retard</span><span>Statut</span></div>
-    <ul class="rows" id="rows"></ul>
-    <details class="departed" id="departed" hidden>
-      <summary id="departed-summary"></summary>
-      <ul class="rows" id="rows-gone"></ul>
-    </details>
-  </section>
-</main>
-
-<footer>
-  <div class="wrap">
-    <p id="model-note">Prédictions issues d'un modèle d'apprentissage automatique (forêt aléatoire) entraîné sur l'historique des départs de Bordeaux depuis avril 2026.</p>
-    <p>Sources : tableau des départs de l'aéroport de Bordeaux, AviationStack, Open-Meteo, calendrier scolaire de l'Éducation nationale. Une probabilité n'est pas une certitude : vérifiez toujours auprès de votre compagnie.</p>
   </div>
+</section>
+
+<section id="frise" style="max-width:1200px; margin:0 auto; padding:clamp(28px,4vw,48px) clamp(16px,4vw,40px) 0; scroll-margin-top:72px; animation:bodReveal linear both; animation-timeline:view(); animation-range:entry 0% entry 60%;">
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px 24px; margin-bottom:16px;">
+    <div style="display:grid; gap:4px;">
+      <h2 style="font-size:clamp(22px,2.4vw,28px); font-weight:600; letter-spacing:-0.02em;">La journée, heure par heure</h2>
+      <p style="font-size:14px; color:#6B7080; max-width:56ch;">Chaque trait est un vol : plus il est haut et rouge, plus le risque est élevé. La courbe suit le risque moyen.</p>
+    </div>
+    <div style="display:flex; flex-wrap:wrap; gap:14px; font-size:13px; color:#545A68;">
+      <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:oklch(0.8 0.04 255);"></span>Faible</span>
+      <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:oklch(0.74 0.09 18);"></span>Possible</span>
+      <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:oklch(0.63 0.14 18);"></span>Probable</span>
+      <span style="display:inline-flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:oklch(0.52 0.17 18);"></span>Très probable</span>
+    </div>
+  </div>
+  <div style="background:#FFFFFF; border:1px solid #E5E1D9; border-radius:24px; padding:20px 0 8px; overflow:hidden;">
+    <div ref="{{ trackRef }}" style="overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; scrollbar-color:#DDD9D1 transparent; padding-bottom:8px;">
+      <div style="position:relative; height:160px; width:{{ trackW }};">
+        <sc-for list="{{ hours }}" as="h" hint-placeholder-count="0">
+          <div style="position:absolute; top:10px; bottom:28px; width:1px; background:#EFECE6; left:{{ h.left }};"></div>
+          <div style="position:absolute; bottom:4px; transform:translateX(-50%); font-family:'Geist Mono',monospace; font-size:11px; color:#8A8F9A; left:{{ h.left }};">{{ h.label }}</div>
+        </sc-for>
+        <svg width="{{ trackWn }}" height="160" style="position:absolute; left:0; top:0; pointer-events:none; overflow:visible;">
+          <path d="{{ areaPath }}" fill="oklch(0.52 0.15 255 / 0.07)"></path>
+          <path d="{{ curvePath }}" fill="none" stroke="oklch(0.52 0.15 255)" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <sc-for list="{{ ticks }}" as="t" hint-placeholder-count="0">
+          <button type="button" title="{{ t.title }}" aria-label="{{ t.title }}" onClick="{{ t.open }}" style="position:absolute; bottom:28px; left:{{ t.left }}; width:6px; margin-left:-3px; height:{{ t.height }}; background:{{ t.color }}; border:none; border-radius:3px; padding:0; cursor:pointer; transform-origin:bottom; transition:transform .25s cubic-bezier(.2,.8,.2,1), height .7s cubic-bezier(.2,.8,.2,1); animation:bodRowIn .6s cubic-bezier(.2,.8,.2,1) both; animation-delay:{{ t.delay }};" style-hover="transform:scaleX(1.8) scaleY(1.06);"></button>
+        </sc-for>
+        <sc-if value="{{ showNow }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute; top:0; bottom:28px; width:2px; margin-left:-1px; background:oklch(0.52 0.15 255); left:{{ nowLeft }}; transition:left 1s;">
+            <span style="position:absolute; top:-4px; left:8px; font-family:'Geist Mono',monospace; font-size:11px; font-weight:500; color:#FFFFFF; background:oklch(0.52 0.15 255); padding:2px 6px; border-radius:6px; white-space:nowrap;">{{ clock }}</span>
+            <span style="position:absolute; bottom:-5px; left:-4px; width:10px; height:10px; border-radius:50%; background:oklch(0.52 0.15 255); animation:bodPulse 2s ease-out infinite;"></span>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="departs" style="max-width:1200px; margin:0 auto; padding:clamp(40px,5vw,64px) clamp(16px,4vw,40px) 0; scroll-margin-top:72px;">
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:12px 24px; margin-bottom:16px;">
+    <div style="display:grid; gap:4px;">
+      <h2 style="font-size:clamp(22px,2.4vw,28px); font-weight:600; letter-spacing:-0.02em;">{{ boardTitle }}</h2>
+      <p style="font-size:14px; color:#6B7080;">{{ boardSub }}</p>
+    </div>
+    <button type="button" onClick="{{ toggleRisk }}" aria-pressed="{{ onlyRiskStr }}" style="display:inline-flex; align-items:center; gap:8px; border:1px solid {{ riskBtnLine }}; background:{{ riskBtnBg }}; color:{{ riskBtnInk }}; border-radius:999px; padding:8px 16px; font:inherit; font-size:14px; cursor:pointer; transition:all .25s;">
+      <span style="width:8px; height:8px; border-radius:50%; background:oklch(0.52 0.17 18);"></span>Risque élevé seulement
+    </button>
+  </div>
+  <div style="background:#FFFFFF; border:1px solid #E5E1D9; border-radius:24px; overflow:hidden;">
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+      <button type="button" onClick="{{ r.open }}" style="position:relative; width:100%; display:flex; flex-wrap:wrap; align-items:center; gap:12px 28px; padding:{{ rowPad }} clamp(16px,2.4vw,28px); background:transparent; border:none; border-bottom:1px solid #EFECE6; text-align:left; cursor:pointer; font:inherit; color:inherit; transition:background .2s; animation:bodRowIn .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:{{ r.delay }};" style-hover="background:#F8F6F2;">
+        <span style="position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:0 3px 3px 0; background:{{ r.edge }};"></span>
+        <span style="flex:1 1 280px; min-width:0; display:flex; align-items:center; gap:clamp(14px,2vw,24px);">
+          <roll-text value="{{ r.std }}" style="font-family:'Geist Mono',monospace; font-size:22px; font-weight:500; letter-spacing:-0.02em; color:{{ r.timeInk }}; flex:none;"></roll-text>
+          <span style="min-width:0; display:grid; gap:2px;">
+            <span style="font-size:18px; font-weight:500; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:{{ r.timeInk }};">{{ r.dest }}</span>
+            <span style="font-size:13px; color:#6B7080; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="font-family:'Geist Mono',monospace;">{{ r.flight }}</span> · {{ r.airline }}</span>
+          </span>
+        </span>
+        <span style="flex:1 1 300px; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+          <span style="flex:1 1 auto; max-width:260px; display:grid; gap:7px;">
+            <span style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:13px;">
+              <span style="color:#6B7080;">{{ r.word }}</span>
+              <span style="font-family:'Geist Mono',monospace; font-size:15px; font-weight:500; color:{{ r.pctInk }};">{{ r.pct }}</span>
+            </span>
+            <span style="display:block; height:6px; border-radius:3px; background:#EFECE6; overflow:hidden;">
+              <span style="display:block; height:100%; border-radius:3px; width:{{ r.barW }}; background:{{ r.barColor }}; transform-origin:left; animation:bodGrow 1s cubic-bezier(.2,.8,.2,1) both; animation-delay:{{ r.delay }};"></span>
+            </span>
+          </span>
+          <span style="flex:none; display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:500; white-space:nowrap; background:{{ r.stBg }}; color:{{ r.stInk }};">
+            <span style="width:6px; height:6px; border-radius:50%; background:{{ r.stDot }};"></span>{{ r.status }}
+          </span>
+        </span>
+      </button>
+    </sc-for>
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:48px clamp(16px,2.4vw,28px); color:#545A68; display:grid; gap:4px;">
+        <strong style="color:#141824; font-weight:500; font-size:17px;">{{ emptyTitle }}</strong>
+        <span>{{ emptyText }}</span>
+      </div>
+    </sc-if>
+  </div>
+  <sc-if value="{{ hasGone }}" hint-placeholder-val="{{ false }}">
+    <button type="button" onClick="{{ toggleGone }}" style="margin-top:16px; width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; border:1px solid #E5E1D9; border-radius:16px; background:transparent; font:inherit; font-size:14px; color:#545A68; cursor:pointer; transition:background .2s;" style-hover="background:#FFFFFF;">
+      <span>{{ goneLabel }}</span>
+      <span style="font-family:'Geist Mono',monospace; display:inline-block; transition:transform .3s; transform:{{ goneRot }};">+</span>
+    </button>
+    <sc-if value="{{ showGone }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:8px; background:#FFFFFF; border:1px solid #E5E1D9; border-radius:24px; overflow:hidden;">
+        <sc-for list="{{ goneRows }}" as="r" hint-placeholder-count="0">
+          <button type="button" onClick="{{ r.open }}" style="position:relative; width:100%; display:flex; flex-wrap:wrap; align-items:center; gap:12px 28px; padding:{{ rowPad }} clamp(16px,2.4vw,28px); background:transparent; border:none; border-bottom:1px solid #EFECE6; text-align:left; cursor:pointer; font:inherit; color:inherit; transition:background .2s; animation:bodRowIn .45s cubic-bezier(.2,.8,.2,1) both; animation-delay:{{ r.delay }};" style-hover="background:#F8F6F2;">
+            <span style="flex:1 1 280px; min-width:0; display:flex; align-items:center; gap:clamp(14px,2vw,24px);">
+              <span style="font-family:'Geist Mono',monospace; font-size:22px; font-weight:500; letter-spacing:-0.02em; color:#8A8F9A; flex:none;">{{ r.std }}</span>
+              <span style="min-width:0; display:grid; gap:2px;">
+                <span style="font-size:18px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#545A68;">{{ r.dest }}</span>
+                <span style="font-size:13px; color:#6B7080;"><span style="font-family:'Geist Mono',monospace;">{{ r.flight }}</span> · {{ r.airline }}</span>
+              </span>
+            </span>
+            <span style="flex:1 1 300px; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:20px;">
+              <span style="flex:1 1 auto; max-width:260px; display:grid; gap:7px;">
+                <span style="display:flex; justify-content:space-between; font-size:13px; color:#6B7080;"><span>Prédit</span><span style="font-family:'Geist Mono',monospace; font-size:15px;">{{ r.pct }}</span></span>
+                <span style="display:block; height:6px; border-radius:3px; background:#EFECE6; overflow:hidden;"><span style="display:block; height:100%; border-radius:3px; width:{{ r.barW }}; background:#CFCAC1;"></span></span>
+              </span>
+              <span style="flex:none; display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:999px; font-size:13px; font-weight:500; white-space:nowrap; background:{{ r.stBg }}; color:{{ r.stInk }};"><span style="width:6px; height:6px; border-radius:50%; background:{{ r.stDot }};"></span>{{ r.status }}</span>
+            </span>
+          </button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </sc-if>
+</section>
+
+<section id="destinations" style="max-width:1200px; margin:0 auto; padding:clamp(64px,8vw,112px) clamp(16px,4vw,40px) 0; scroll-margin-top:72px; animation:bodReveal linear both; animation-timeline:view(); animation-range:entry 0% entry 40%;">
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:16px 24px; margin-bottom:24px;">
+    <div style="display:grid; gap:6px;">
+      <span style="font-family:'Geist Mono',monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:oklch(0.52 0.15 255);">Destinations</span>
+      <h2 style="font-size:clamp(30px,4.4vw,54px); font-weight:600; letter-spacing:-0.035em; line-height:1; text-wrap:balance;">Où partir depuis Bordeaux</h2>
+      <p style="font-size:15px; color:#6B7080; max-width:52ch;">{{ destSub }}</p>
+    </div>
+    <div role="group" aria-label="Trier" style="display:flex; padding:4px; background:#ECE9E2; border-radius:14px; gap:4px; flex-wrap:wrap;">
+      <sc-for list="{{ sorts }}" as="o" hint-placeholder-count="3">
+        <button type="button" onClick="{{ o.pick }}" style="border:none; border-radius:10px; padding:8px 14px; cursor:pointer; font:inherit; font-size:14px; font-weight:500; white-space:nowrap; background:{{ o.bg }}; color:{{ o.ink }}; box-shadow:{{ o.sh }}; transition:background .25s, color .25s;">{{ o.label }}</button>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%,250px), 1fr)); gap:16px;">
+    <sc-for list="{{ dests }}" as="d" hint-placeholder-count="8">
+      <div style="background:#FFFFFF; border:1px solid #E5E1D9; border-radius:22px; overflow:hidden; display:flex; flex-direction:column; transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; animation:bodRowIn .6s cubic-bezier(.2,.8,.2,1) both; animation-delay:{{ d.delay }};" style-hover="transform:translateY(-6px); box-shadow:0 24px 50px rgba(20,24,36,0.10);">
+        <div style="position:relative; aspect-ratio:4 / 3; background:#EFECE6;">
+          <image-slot id="dest-{{ d.iata }}" shape="rect" placeholder="{{ d.placeholder }}" src="{{ d.photo }}" credit="{{ d.photoCredit }}" credit-href="{{ d.photoHref }}" style="position:absolute; inset:0;"></image-slot>
+          <span style="position:absolute; top:12px; left:12px; pointer-events:none; font-family:'Geist Mono',monospace; font-size:12px; font-weight:600; letter-spacing:0.06em; background:#141824; color:#F5F3EE; padding:4px 8px; border-radius:8px;">{{ d.iata }}</span>
+        </div>
+        <button type="button" onClick="{{ d.open }}" style="flex:1; display:grid; gap:14px; padding:16px 18px 18px; border:none; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer;">
+          <span style="display:grid; gap:2px;">
+            <span style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+              <span style="font-size:21px; font-weight:600; letter-spacing:-0.02em;">{{ d.name }}</span>
+              <span style="font-family:'Geist Mono',monospace; font-size:13px; color:#545A68; white-space:nowrap;">{{ d.dur }}</span>
+            </span>
+            <span style="font-size:13px; color:#6B7080;">{{ d.country }} · {{ d.airlines }}</span>
+          </span>
+          <span style="display:grid; gap:7px;">
+            <span style="display:flex; justify-content:space-between; font-size:13px; color:#545A68;"><span>{{ d.nLabel }}</span><span>Risque moyen <span style="font-family:'Geist Mono',monospace; color:#141824;">{{ d.avgLabel }}</span></span></span>
+            <span style="display:block; height:5px; border-radius:3px; background:#EFECE6; overflow:hidden;"><span style="display:block; height:100%; border-radius:3px; width:{{ d.barW }}; background:{{ d.color }};"></span></span>
+          </span>
+          <span style="display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+            <span style="color:#545A68;">{{ d.next }}</span>
+            <span style="color:oklch(0.52 0.15 255); font-weight:500;">Guide →</span>
+          </span>
+        </button>
+      </div>
+    </sc-for>
+  </div>
+  <sc-if value="{{ moreDest }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex; justify-content:center; margin-top:24px;">
+      <button type="button" onClick="{{ toggleAllDest }}" style="border:1px solid #D4CFC5; background:transparent; border-radius:999px; padding:12px 22px; font:inherit; font-size:14px; font-weight:500; color:#141824; cursor:pointer; transition:background .2s, border-color .2s;" style-hover="background:#141824; color:#F5F3EE; border-color:#141824;">{{ moreLabel }}</button>
+    </div>
+  </sc-if>
+</section>
+
+<section id="carte" style="max-width:1200px; margin:0 auto; padding:clamp(64px,8vw,112px) clamp(16px,4vw,40px) 0; scroll-margin-top:72px; animation:bodReveal linear both; animation-timeline:view(); animation-range:entry 0% entry 40%;">
+  <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:16px 24px; margin-bottom:24px;">
+    <div style="display:grid; gap:6px;">
+      <span style="font-family:'Geist Mono',monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:oklch(0.52 0.15 255);">Carte</span>
+      <h2 style="font-size:clamp(30px,4.4vw,54px); font-weight:600; letter-spacing:-0.035em; line-height:1;">Toutes les routes</h2>
+      <p style="font-size:15px; color:#6B7080; max-width:52ch;">L'épaisseur suit le nombre de départs sur 48&nbsp;h, la couleur le risque moyen. Touchez une ville pour son guide.</p>
+    </div>
+  </div>
+  <div style="position:relative; height:clamp(400px,58vw,640px); background:#FCFBF8; border:1px solid #E5E1D9; border-radius:28px; overflow:hidden;">
+    <x-import component-from-global-scope="bod-route-map" from="./route-map.js" data-routes="{{ routesJson }}" data-selected="{{ selIata }}" style="position:absolute; inset:0;" hint-size="100%,100%"></x-import>
+    <sc-if value="{{ hasFar }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute; left:16px; bottom:16px; display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px; background:rgba(255,255,255,0.9); backdrop-filter:blur(8px); border:1px solid #E5E1D9; border-radius:16px;">
+        <span style="font-size:12px; color:#6B7080; padding:0 6px;">Long-courriers</span>
+        <sc-for list="{{ farList }}" as="fz" hint-placeholder-count="0">
+          <button type="button" onClick="{{ fz.open }}" style="border:1px solid #E5E1D9; background:#FFFFFF; border-radius:10px; padding:6px 10px; font:inherit; font-size:13px; cursor:pointer; display:inline-flex; gap:6px; align-items:center;" style-hover="border-color:#141824;"><span style="width:8px; height:8px; border-radius:50%; background:{{ fz.color }};"></span>{{ fz.name }} <span style="font-family:'Geist Mono',monospace; color:#6B7080;">{{ fz.dur }}</span></button>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+</section>
+
+<footer style="max-width:1200px; margin:clamp(64px,8vw,112px) auto 0; padding:28px clamp(16px,4vw,40px) 56px; border-top:1px solid #E5E1D9; display:grid; gap:10px; font-size:13px; color:#6B7080;">
+  <p style="max-width:72ch;">{{ modelNote }}</p>
+  <p style="max-width:72ch;">Sources : tableau des départs de l'aéroport de Bordeaux, AviationStack, Open-Meteo, calendrier scolaire de l'Éducation nationale. Une probabilité n'est pas une certitude : vérifiez toujours auprès de votre compagnie.</p>
 </footer>
 
-<div class="scrim" id="scrim"></div>
-<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="d-dest" tabindex="-1"></aside>
-
-<script>
-// ══════════════════════════════════════════
-// Données
-// ══════════════════════════════════════════
-// Fichier écrit par scripts/pipeline.py (GitHub Actions), toutes les heures.
-const DATA_URL = 'data/predictions.json';
-const REFRESH_MS = 5 * 60 * 1000;
-
-const RISK = {
-  green:  {level:1, word:'Faible'},
-  yellow: {level:2, word:'Possible'},
-  orange: {level:3, word:'Probable'},
-  red:    {level:4, word:'Très probable'},
-};
-
-// Noms lisibles pour les aéroports dont AviationStack donne un nom peu parlant.
-const DEST_NAMES = {
-  CDG:'Paris CDG', ORY:'Paris Orly', LHR:'Londres Heathrow', LGW:'Londres Gatwick', LTN:'Londres Luton',
-  STN:'Londres Stansted', LCY:'Londres City', BCN:'Barcelone', MAD:'Madrid', AMS:'Amsterdam', FCO:'Rome',
-  MXP:'Milan Malpensa', LIN:'Milan Linate', BER:'Berlin', LIS:'Lisbonne', OPO:'Porto', ATH:'Athènes',
-  IST:'Istanbul', SAW:'Istanbul SAW', CMN:'Casablanca', RAK:'Marrakech', AGA:'Agadir', TUN:'Tunis',
-  ALG:'Alger', ORN:'Oran', NCE:'Nice', LYS:'Lyon', MRS:'Marseille', TLS:'Toulouse', NTE:'Nantes',
-  LIL:'Lille', SXB:'Strasbourg', GVA:'Genève', ZRH:'Zurich', BSL:'Bâle-Mulhouse', FRA:'Francfort',
-  MUC:'Munich', VIE:'Vienne', CPH:'Copenhague', ARN:'Stockholm', OSL:'Oslo', DUB:'Dublin', EDI:'Édimbourg',
-  MAN:'Manchester', BRS:'Bristol', BHX:'Birmingham', BRU:'Bruxelles', CRL:'Charleroi', LUX:'Luxembourg',
-  AJA:'Ajaccio', BIA:'Bastia', FSC:'Figari', CLY:'Calvi', VCE:'Venise', NAP:'Naples', FLR:'Florence',
-  PMO:'Palerme', CTA:'Catane', OLB:'Olbia', BRI:'Bari', AGP:'Malaga', ALC:'Alicante', VLC:'Valence',
-  SVQ:'Séville', PMI:'Palma', IBZ:'Ibiza', MAH:'Minorque', FAO:'Faro', FNC:'Funchal', TFS:'Tenerife',
-  LPA:'Gran Canaria', ACE:'Lanzarote', PRG:'Prague', BUD:'Budapest', OTP:'Bucarest', KRK:'Cracovie',
-  SPU:'Split', DBV:'Dubrovnik', HER:'Héraklion', CFU:'Corfou', MLA:'Malte', DJE:'Djerba', MIR:'Monastir',
-  YUL:'Montréal', DOH:'Doha', DXB:'Dubaï', TLV:'Tel Aviv', MPL:'Montpellier', TLN:'Toulon', BES:'Brest',
-  RNS:'Rennes', JER:'Jersey', RVN:'Rovaniemi', DSS:'Dakar', FDF:'Fort-de-France', SID:'Sal', BVC:'Boa Vista',
-};
-
-// Villes tapées en toutes lettres -> codes d'aéroport (recherche).
-const CITY_ALIASES = {
-  paris:['CDG','ORY'], londres:['LHR','LGW','LTN','STN','LCY'], london:['LHR','LGW','LTN','STN','LCY'],
-  milan:['MXP','LIN','BGY'], rome:['FCO','CIA'], istanbul:['IST','SAW'], bale:['BSL'], basel:['BSL'],
-  geneve:['GVA'], geneva:['GVA'], tenerife:['TFS','TFN'], majorque:['PMI'], corse:['AJA','BIA','FSC','CLY'],
-  maroc:['CMN','RAK','AGA','FEZ','TNG','RBA'],
-};
-
-const state = { data:null, flights:[], day:0, query:'', onlyRisk:false, generatedAt:null };
-
-function esc(v) {
-  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-function norm(s) {
-  return String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
-}
-function hasNum(v) { return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)); }
-function signed(n) { return (n > 0 ? '+' : '') + n; }
-
-// Date et heure à Bordeaux, quel que soit le fuseau du visiteur.
-function parisNow() {
-  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
-    timeZone:'Europe/Paris', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23',
-  }).formatToParts(new Date()).map(p => [p.type, p.value]));
-  return { date:`${parts.year}-${parts.month}-${parts.day}`, minutes:Number(parts.hour) * 60 + Number(parts.minute), hhmm:`${parts.hour}:${parts.minute}` };
-}
-function parisDate(offsetDays) {
-  return new Intl.DateTimeFormat('en-CA', {timeZone:'Europe/Paris'}).format(new Date(Date.now() + offsetDays * 86400000));
-}
-function toMinutes(hhmm) { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; }
-function frenchDate(iso) {
-  return new Intl.DateTimeFormat('fr-FR', {weekday:'long', day:'numeric', month:'long', timeZone:'UTC'}).format(new Date(iso + 'T12:00:00Z'));
-}
-
-function destName(f) {
-  if (DEST_NAMES[f.destination_iata]) return DEST_NAMES[f.destination_iata];
-  const d = String(f.destination || '').replace(/airport|international|a[ée]roport|aeropuerto|flughafen/gi, '').replace(/\s+/g, ' ').trim();
-  return d || f.destination_iata || '—';
-}
-function riskOf(f) { return RISK[f.risk_level] || RISK.green; }
-function isGone(f) {
-  return Boolean(f.atd) || /^d[ée]coll/i.test(f.airport_status || '') || f.status === 'landed';
-}
-function isCancelled(f) { return f.status === 'cancelled' || /annul/i.test(f.airport_status || ''); }
-
-// Texte du statut, façon tableau d'aéroport : 16 caractères au plus, 10 en version courte (mobile).
-function statusText(f, short) {
-  if (isCancelled(f)) return 'ANNULÉ';
-  if (f.atd) {
-    const d = hasNum(f.delay_min) ? signed(Number(f.delay_min)) : '';
-    return short ? `PARTI ${d || f.atd}` : `PARTI ${f.atd} ${d}`;
-  }
-  if (isGone(f)) return 'DÉCOLLÉ';
-  if (f.est_departure) return `${short ? 'PRÉV' : 'PRÉVU'} ${f.est_departure}`;
-  if (f.estimated_schedule) return 'ESTIMÉ';
-  const s = norm(f.airport_status);
-  if (s.startsWith('embarq')) return short ? 'EMBARQ.' : 'EMBARQUEMENT';
-  if (s.startsWith('enreg') && s.includes('termin')) return short ? 'ENREG. FIN' : 'ENREG. TERMINÉ';
-  if (s.startsWith('enreg')) return short ? 'ENREG.' : 'ENREGISTREMENT';
-  return 'À L\'HEURE';
-}
-
-// ══════════════════════════════════════════
-// Palettes : seuls les caractères qui changent basculent
-// ══════════════════════════════════════════
-const CHARSET = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789:+-.%';
-const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function setFlap(el, text, width, delay = 0) {
-  const target = String(text).toUpperCase().padEnd(width).slice(0, width);
-  el.setAttribute('aria-label', String(text).trim());
-  while (el.children.length < width) {
-    const ch = document.createElement('span');
-    ch.className = 'ch blank';
-    ch.setAttribute('aria-hidden', 'true');
-    ch.dataset.c = ' ';
-    ch.textContent = ' ';
-    el.appendChild(ch);
-  }
-  while (el.children.length > width) el.lastChild.remove();
-  [...el.children].forEach((ch, i) => {
-    const c = target[i];
-    if (ch.dataset.c === c && !ch.dataset.busy) return;
-    if (reduceMotion) { paint(ch, c); return; }
-    flipTo(ch, c, delay + i * 22);
-  });
-}
-
-function paint(ch, c) {
-  ch.dataset.c = c;
-  ch.textContent = c;
-  ch.classList.toggle('blank', c === ' ');
-}
-
-function flipTo(ch, c, delay) {
-  const run = (ch._run || 0) + 1;
-  ch._run = run;
-  ch.dataset.busy = '1';
-  let steps = 3 + Math.floor(Math.random() * 4);
-  setTimeout(function step() {
-    if (ch._run !== run) return;               // une nouvelle valeur est arrivée entre-temps
-    const last = steps-- <= 0;
-    paint(ch, last ? c : CHARSET[1 + Math.floor(Math.random() * (CHARSET.length - 1))]);
-    ch.classList.remove('turn'); void ch.offsetWidth; ch.classList.add('turn');
-    if (last) { delete ch.dataset.busy; return; }
-    setTimeout(step, 60);
-  }, delay);
-}
-
-// ══════════════════════════════════════════
-// Chargement
-// ══════════════════════════════════════════
-async function load() {
-  try {
-    const res = await fetch(`${DATA_URL}?t=${Date.now()}`, {cache:'no-store'});
-    if (!res.ok) throw new Error(res.status);
-    const data = await res.json();
-    if (state.generatedAt === data.generated_at) return;
-    state.data = data;
-    state.flights = data.flights || [];
-    state.generatedAt = data.generated_at;
-    render();
-  } catch (e) {
-    if (!state.data) {
-      document.getElementById('board-sub').textContent = 'Les prédictions n\'ont pas pu être chargées. Nouvel essai dans quelques minutes.';
-    }
-  }
-}
-
-function dayFlights() {
-  const day = parisDate(state.day);
-  return state.flights.filter(f => f.date === day).sort((a, b) => a.std.localeCompare(b.std) || a.flight_iata.localeCompare(b.flight_iata));
-}
-
-function matches(f, q) {
-  if (!q) return true;
-  const qn = norm(q), compact = qn.replace(/ /g, '');
-  if (norm(f.flight_iata).replace(/ /g, '').includes(compact)) return true;
-  if (norm(destName(f)).includes(qn) || norm(f.destination).includes(qn)) return true;
-  if ((f.destination_iata || '').toLowerCase() === compact) return true;
-  const alias = CITY_ALIASES[qn.replace(/ /g, '_')];
-  return Boolean(alias && alias.includes(f.destination_iata));
-}
-
-// ══════════════════════════════════════════
-// Rendu
-// ══════════════════════════════════════════
-function render() {
-  const all = dayFlights();
-  renderCounters(all);
-  renderTimeline(all);
-  renderBoard(all);
-  const t = state.generatedAt ? String(state.generatedAt).slice(11, 16) : '';
-  document.getElementById('updated-label').textContent = t ? `Données de ${t} · il est` : 'Il est';
-  if (state.data?.model?.auc) {
-    document.getElementById('model-note').textContent =
-      'Prédictions issues d\'une forêt aléatoire entraînée sur l\'historique des départs de Bordeaux depuis avril 2026. ' +
-      `Testée sur les quatre dernières semaines, elle place un vol qui sera en retard au-dessus d'un vol à l'heure dans ${Math.round(state.data.model.auc * 100)} % des cas.`;
-  }
-}
-
-function renderCounters(all) {
-  const live = all.filter(f => !isGone(f) && !isCancelled(f));
-  setFlap(document.getElementById('c-upcoming'), String(live.length).padStart(3), 3);
-  setFlap(document.getElementById('c-risk'), String(live.filter(f => riskOf(f).level >= 3).length).padStart(3), 3, 120);
-  setFlap(document.getElementById('c-announced'), String(live.filter(f => hasNum(f.announced_delay) && f.announced_delay >= 5).length).padStart(3), 3, 240);
-  setFlap(document.getElementById('c-gone'), String(all.filter(isGone).length).padStart(3), 3, 360);
-}
-
-// Frise de 05:00 (ou de l'heure du premier vol s'il part plus tôt) à 24:00,
-// un trait par vol, hauteur selon le risque.
-const T_END = 24 * 60;
-let tStart = 5 * 60;
-const hourWidth = () => (window.innerWidth < 640 ? 52 : 58);
-const trackX = m => (Math.min(Math.max(m, tStart), T_END) - tStart) / 60 * hourWidth() + 12;
-
-function renderTimeline(all) {
-  const track = document.getElementById('track');
-  const first = Math.min(...all.map(f => toMinutes(f.std)), 5 * 60);
-  const start = Math.floor(first / 60) * 60;
-  if (start !== tStart) { tStart = start; track.removeAttribute('data-built'); }
-  track.style.width = `${(T_END - tStart) / 60 * hourWidth() + 24}px`;
-  if (!track.dataset.built) {
-    let html = '';
-    for (let h = tStart / 60; h <= 24; h++) {
-      html += `<div class="grid" style="left:${trackX(h * 60)}px"></div>`;
-      html += `<div class="hour" style="left:${trackX(h * 60)}px">${String(h % 24).padStart(2, '0')}h</div>`;
-    }
-    html += '<div class="now" id="now-line"><span></span></div>';
-    track.innerHTML = html;
-    track.dataset.built = '1';
-  }
-  const existing = new Map([...track.querySelectorAll('.tick')].map(t => [t.dataset.key, t]));
-  const seen = new Set();
-  const perMinute = {};  // vols à la même minute : décalés de quelques pixels
-  all.forEach(f => {
-    const key = `${f.date}|${f.flight_iata}`;
-    seen.add(key);
-    const m = toMinutes(f.std);
-    const n = perMinute[m] = (perMinute[m] || 0) + 1;
-    let tick = existing.get(key);
-    if (!tick) {
-      tick = document.createElement('button');
-      tick.className = 'tick';
-      tick.type = 'button';
-      tick.dataset.key = key;
-      tick.style.height = '0px';
-      track.appendChild(tick);
-    }
-    const lvl = riskOf(f).level;
-    tick.dataset.level = lvl;
-    tick.classList.toggle('gone', isGone(f) || isCancelled(f));
-    tick.style.left = `${trackX(m) + (n - 1) * 5}px`;
-    tick.title = `${f.std} · ${f.flight_iata} · ${destName(f)} · ${Math.round(f.probabilite_retard)} %`;
-    tick.setAttribute('aria-label', tick.title);
-    tick.onclick = () => openDrawer(f);
-    requestAnimationFrame(() => requestAnimationFrame(() => { tick.style.height = `${12 + lvl * 13}px`; }));
-  });
-  existing.forEach((t, k) => { if (!seen.has(k)) t.remove(); });
-  updateNow(true);
-}
-
-function updateNow(scroll) {
-  const line = document.getElementById('now-line');
-  if (!line) return;
-  const now = parisNow();
-  const show = state.day === 0 && now.minutes >= tStart;
-  line.style.display = show ? 'block' : 'none';
-  const box = document.getElementById('track-scroll');
-  if (!show) { if (scroll) box.scrollTo({left:0}); return; }
-  const left = trackX(now.minutes);
-  line.style.left = `${left}px`;
-  line.querySelector('span').textContent = now.hhmm;
-  if (scroll) box.scrollTo({left:Math.max(0, left - box.clientWidth * 0.3), behavior:reduceMotion ? 'auto' : 'smooth'});
-}
-
-function rowHTML(f) {
-  const r = riskOf(f), gone = isGone(f) || isCancelled(f);
-  return `
-    <li><button type="button" class="row${gone ? ' gone' : ''}" data-level="${gone ? 0 : r.level}">
-      <span class="flap md" data-flap="time"></span>
-      <span class="flight">${esc(f.flight_iata)}<span class="airline">${esc(f.airline)}</span></span>
-      <span class="flap md" data-flap="dest"></span>
-      <span class="risk">
-        <span class="meter${gone ? ' muted' : ''}" data-level="${r.level}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <span class="pct">${Math.round(f.probabilite_retard)} %</span>
-        <span class="word">${r.word}</span>
-        <span class="sr-only">Risque ${r.word.toLowerCase()}</span>
-      </span>
-      <span class="flap sm${gone ? ' dim' : ''}" data-flap="status"></span>
-    </button></li>`;
-}
-
-// Garde les palettes des lignes déjà affichées : seules les valeurs modifiées basculent.
-function renderRows(ul, list) {
-  const narrow = window.innerWidth < 760;
-  const destW = narrow ? 13 : 18;
-  const previous = new Map([...ul.querySelectorAll('.row')].map(b => [b.dataset.key, b]));
-  const frag = document.createDocumentFragment();
-  list.forEach((f, idx) => {
-    const key = `${f.date}|${f.flight_iata}`;
-    const tmp = document.createElement('template');
-    tmp.innerHTML = rowHTML(f).trim();
-    const li = tmp.content.firstChild;
-    const btn = li.querySelector('.row');
-    const old = previous.get(key);
-    if (old) {
-      ['time', 'dest', 'status'].forEach(name =>
-        btn.querySelector(`[data-flap="${name}"]`).replaceWith(old.querySelector(`[data-flap="${name}"]`)));
-      btn.querySelector('[data-flap="status"]').classList.toggle('dim', btn.classList.contains('gone'));
-    }
-    btn.dataset.key = key;
-    btn.addEventListener('click', () => openDrawer(f));
-    const delay = old ? 0 : Math.min(idx, 18) * 45;
-    setFlap(btn.querySelector('[data-flap="time"]'), f.std, 5, delay);
-    setFlap(btn.querySelector('[data-flap="dest"]'), destName(f), destW, delay + 60);
-    setFlap(btn.querySelector('[data-flap="status"]'), statusText(f, narrow), narrow ? 10 : 16, delay + 120);
-    frag.appendChild(li);
-  });
-  ul.replaceChildren(frag);
-}
-
-function renderBoard(all) {
-  const visible = all.filter(f => matches(f, state.query));
-  const live = visible.filter(f => !isGone(f) && !isCancelled(f) && (!state.onlyRisk || riskOf(f).level >= 3));
-  const gone = visible.filter(f => isGone(f) || isCancelled(f));
-  const estimated = all.some(f => f.estimated_schedule);
-
-  document.getElementById('board-title').textContent = state.day === 0 ? 'Prochains départs' : 'Départs de demain';
-  document.getElementById('board-sub').textContent =
-    `${frenchDate(parisDate(state.day))} · ${live.length} vol${live.length > 1 ? 's' : ''}` +
-    (estimated ? ' · programme estimé d\'après la semaine dernière' : '');
-
-  const ul = document.getElementById('rows');
-  if (live.length) {
-    renderRows(ul, live);
-  } else {
-    const why = state.query ? ['Aucun vol ne correspond à cette recherche.', 'Essayez une ville, un code d\'aéroport ou un numéro de vol.']
-      : state.onlyRisk ? ['Aucun vol à risque élevé.', 'Tous les départs restants ont un risque faible ou modéré.']
-      : all.length ? ['Tous les vols de la journée sont partis.', 'Le programme de demain est dans l\'onglet Demain.']
-      : ['Pas encore de prédictions pour ce jour.', 'Elles apparaîtront au prochain passage de collecte.'];
-    ul.innerHTML = `<li class="empty"><strong>${why[0]}</strong>${why[1]}</li>`;
-  }
-
-  document.getElementById('departed').hidden = gone.length === 0;
-  document.getElementById('departed-summary').textContent = `Vols partis (${gone.length}) · prédiction et retard réel`;
-  renderRows(document.getElementById('rows-gone'), gone);
-}
-
-// ══════════════════════════════════════════
-// Panneau de détail
-// ══════════════════════════════════════════
-const TYPE_TEXT = {
-  'J-1':'la veille du vol', 'Jour J':'le jour du vol', 'T-2h':'moins de 2 h 30 avant le départ',
-  'Annonce':'d\'après l\'annonce de l\'aéroport',
-};
-
-function openDrawer(f) {
-  const r = riskOf(f), p = Math.round(f.probabilite_retard);
-  const drawer = document.getElementById('drawer');
-  const facts = [];
-  if (hasNum(f.avg_delay_flight)) facts.push(['Retard moyen de ce vol', `${Math.round(f.avg_delay_flight)} min`]);
-  if (hasNum(f.avg_delay_airline)) facts.push([`Retard moyen ${esc(f.airline)}`, `${Math.round(f.avg_delay_airline)} min`]);
-  const weather = [f.weather_label, hasNum(f.weather_temp) ? `${Math.round(f.weather_temp)} °C` : '',
-    hasNum(f.weather_wind) ? `vent ${Math.round(f.weather_wind)} km/h` : '',
-    hasNum(f.weather_precip) && Number(f.weather_precip) > 0 ? `${Number(f.weather_precip)} mm` : ''].filter(Boolean).join(', ');
-  if (weather) facts.push(['Météo prévue à Bordeaux', esc(weather)]);
-  facts.push(['Prédiction faite', `${esc(String(f.predicted_at).slice(11, 16))}, ${TYPE_TEXT[f.prediction_type] || ''}`]);
-
-  let note = '';
-  if (isCancelled(f)) {
-    note = '<div class="note neutral">Vol annoncé annulé par l\'aéroport.</div>';
-  } else if (f.atd && hasNum(f.delay_min)) {
-    const d = Number(f.delay_min), late = d >= 15, said = p >= 50;
-    note = `<div class="note${late ? '' : ' neutral'}">Parti à ${esc(f.atd)}, ${d > 0 ? `avec ${d} min de retard` : d < 0 ? `${-d} min en avance` : 'à l\'heure'}. `
-      + `Le modèle donnait ${p} % de risque : ${late === said ? 'prédiction confirmée.' : 'prédiction démentie.'}</div>`;
-  } else if (isGone(f)) {
-    note = '<div class="note neutral">Décollé. L\'heure exacte de départ sera connue ce soir.</div>';
-  } else if (hasNum(f.announced_delay) && Number(f.announced_delay) !== 0) {
-    note = `<div class="note">L'aéroport annonce un départ à ${esc(f.est_departure)}, soit ${signed(Number(f.announced_delay))} min.</div>`;
-  } else if (f.estimated_schedule) {
-    note = '<div class="note neutral">Programme estimé : ce vol a décollé le même jour la semaine dernière. L\'aéroport le confirmera demain matin.</div>';
-  }
-
-  drawer.innerHTML = `
-    <button type="button" class="close" aria-label="Fermer" id="d-close">✕</button>
-    <div class="d-head">
-      <span class="d-flight">${esc(f.flight_iata)} · ${esc(f.airline)}</span>
-      <span class="d-dest" id="d-dest">${esc(destName(f))}</span>
-      <span class="flap lg" id="d-time"></span>
-      <span class="label">${esc(frenchDate(f.date))}</span>
+<div onClick="{{ closePanel }}" style="position:fixed; inset:0; z-index:60; background:rgba(20,24,36,0.3); backdrop-filter:blur(3px); opacity:{{ scrimOp }}; pointer-events:{{ scrimPE }}; transition:opacity .35s;"></div>
+<aside role="dialog" aria-modal="true" aria-label="Détail" style="position:fixed; top:12px; right:12px; bottom:12px; width:min(480px, calc(100vw - 24px)); z-index:70; background:#FFFFFF; border-radius:26px; box-shadow:0 30px 90px rgba(20,24,36,0.22); overflow-y:auto; overscroll-behavior:contain; transform:{{ drawerT }}; visibility:{{ drawerVis }}; transition:transform .5s cubic-bezier(.2,.9,.2,1), visibility .5s;">
+  <sc-if value="{{ pOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative; aspect-ratio:16 / 9; background:#EFECE6;">
+      <image-slot id="dest-{{ gIata }}" shape="rect" placeholder="{{ gPlaceholder }}" src="{{ gPhoto }}" credit="{{ gPhotoCredit }}" credit-href="{{ gPhotoHref }}" style="position:absolute; inset:0;"></image-slot>
+      <button type="button" onClick="{{ closePanel }}" aria-label="Fermer" style="position:absolute; top:14px; right:14px; width:40px; height:40px; border-radius:12px; border:none; background:rgba(255,255,255,0.92); color:#141824; font:inherit; font-size:15px; cursor:pointer; box-shadow:0 4px 14px rgba(20,24,36,0.12);">✕</button>
     </div>
-    <div class="d-proba">
-      <span class="label">Risque de retard</span>
-      <div class="big">
-        <span class="flap lg${r.level === 4 ? ' accent' : ''}" id="d-pct"></span>
-        <span class="meter" data-level="${r.level}" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <div style="padding:22px clamp(18px,4vw,28px) 32px; display:grid; gap:22px;">
+      <div style="display:grid; gap:6px;">
+        <span style="font-family:'Geist Mono',monospace; font-size:13px; color:#545A68;">{{ pKicker }}</span>
+        <h3 style="font-size:36px; line-height:1; font-weight:600; letter-spacing:-0.03em;">{{ pTitle }}</h3>
+        <span style="font-size:14px; color:#6B7080;">{{ pSub }}</span>
       </div>
-      <p>${r.word} : probabilité que ce vol parte avec 15 minutes de retard ou plus.</p>
-      ${note}
+
+      <sc-if value="{{ pIsFlight }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:14px; padding:20px; border-radius:20px; background:#F8F6F2;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:12px;">
+            <div style="display:grid; gap:2px;">
+              <span style="font-size:13px; color:#6B7080;">Risque de retard</span>
+              <roll-text value="{{ pPct }}" style="font-size:52px; font-weight:600; letter-spacing:-0.04em; line-height:1; color:{{ pPctInk }};"></roll-text>
+            </div>
+            <div style="display:grid; gap:2px; justify-items:end;">
+              <span style="font-size:13px; color:#6B7080;">Départ prévu</span>
+              <roll-text value="{{ pTime }}" style="font-family:'Geist Mono',monospace; font-size:28px; font-weight:500;"></roll-text>
+            </div>
+          </div>
+          <span style="display:block; height:8px; border-radius:4px; background:#E9E5DE; overflow:hidden;"><span style="display:block; height:100%; border-radius:4px; width:{{ pBarW }}; background:{{ pBarColor }}; transition:width .8s cubic-bezier(.2,.8,.2,1);"></span></span>
+          <p style="font-size:14px; color:#545A68;">{{ pWord }} : probabilité que ce vol parte avec 15&nbsp;minutes de retard ou plus.</p>
+          <sc-if value="{{ pHasNote }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:12px 14px; border-radius:12px; font-size:14px; background:{{ pNoteBg }}; color:{{ pNoteInk }};">{{ pNote }}</div>
+          </sc-if>
+        </div>
+        <div style="display:grid;">
+          <sc-for list="{{ pFacts }}" as="fa" hint-placeholder-count="0">
+            <div style="display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px solid #EFECE6; font-size:14px;">
+              <span style="color:#545A68;">{{ fa.k }}</span>
+              <span style="font-family:'Geist Mono',monospace; font-size:13px; text-align:right;">{{ fa.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <div style="display:grid; gap:12px;">
+        <span style="font-family:'Geist Mono',monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:oklch(0.52 0.15 255);">À destination · {{ gName }}</span>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div style="padding:14px; border:1px solid #EFECE6; border-radius:16px; display:grid; gap:2px;">
+            <span style="font-size:12px; color:#6B7080;">Heure locale</span>
+            <span style="font-family:'Geist Mono',monospace; font-size:22px; font-weight:500;">{{ gLocal }}</span>
+            <span style="font-size:12px; color:#545A68;">{{ gDiff }}</span>
+          </div>
+          <div style="padding:14px; border:1px solid #EFECE6; border-radius:16px; display:grid; gap:2px;">
+            <span style="font-size:12px; color:#6B7080;">Météo sur place</span>
+            <span style="font-size:22px; font-weight:500; letter-spacing:-0.02em;">{{ gWxT }}</span>
+            <span style="font-size:12px; color:#545A68;">{{ gWxL }}</span>
+          </div>
+          <div style="padding:14px; border:1px solid #EFECE6; border-radius:16px; display:grid; gap:2px;">
+            <span style="font-size:12px; color:#6B7080;">Temps de vol</span>
+            <span style="font-family:'Geist Mono',monospace; font-size:22px; font-weight:500;">{{ gDur }}</span>
+            <span style="font-size:12px; color:#545A68;">depuis Bordeaux</span>
+          </div>
+          <div style="padding:14px; border:1px solid #EFECE6; border-radius:16px; display:grid; gap:2px;">
+            <span style="font-size:12px; color:#6B7080;">Formalités</span>
+            <span style="font-size:17px; font-weight:500; letter-spacing:-0.01em;">{{ gSch }}</span>
+            <span style="font-size:12px; color:#545A68;">{{ gSchSub }}</span>
+          </div>
+        </div>
+        <sc-if value="{{ gHasTip }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; gap:12px; padding:14px; border-radius:16px; background:oklch(0.96 0.02 255); font-size:14px; color:#141824;">
+            <span style="flex:none; width:22px; height:22px; border-radius:50%; background:oklch(0.52 0.15 255); color:#FFFFFF; font-size:12px; font-weight:600; display:grid; place-items:center;">i</span>
+            <span><strong style="font-weight:500;">Depuis l'aéroport : </strong>{{ gTip }}</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ gHasFlights }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid; gap:8px;">
+          <span style="font-family:'Geist Mono',monospace; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#6B7080;">{{ gFlightsTitle }}</span>
+          <sc-for list="{{ gFlights }}" as="gf" hint-placeholder-count="0">
+            <button type="button" onClick="{{ gf.open }}" style="display:flex; align-items:center; gap:14px; padding:12px 14px; border:1px solid #EFECE6; border-radius:14px; background:#FFFFFF; font:inherit; color:inherit; text-align:left; cursor:pointer; transition:border-color .2s, transform .25s;" style-hover="border-color:#141824; transform:translateX(3px);">
+              <span style="font-family:'Geist Mono',monospace; font-size:16px; font-weight:500;">{{ gf.std }}</span>
+              <span style="flex:1; min-width:0; display:grid;">
+                <span style="font-size:13px; color:#545A68;">{{ gf.day }}</span>
+                <span style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="font-family:'Geist Mono',monospace;">{{ gf.flight }}</span> · {{ gf.airline }}</span>
+              </span>
+              <span style="font-family:'Geist Mono',monospace; font-size:14px; font-weight:500; color:{{ gf.ink }};">{{ gf.pct }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
     </div>
-    <ul class="facts">${facts.map(([k, v]) => `<li><span>${k}</span><span>${v}</span></li>`).join('')}</ul>`;
-  setFlap(drawer.querySelector('#d-time'), f.std, 5, 80);
-  setFlap(drawer.querySelector('#d-pct'), `${String(p).padStart(2)}%`, 4, 160);
-  drawer.querySelector('#d-close').onclick = closeDrawer;
-  drawer._opener = document.activeElement;
-  drawer.classList.add('open');
-  document.getElementById('scrim').classList.add('open');
-  drawer.focus();
+  </sc-if>
+</aside>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;ambient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mouvement&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Confortable&quot;,&quot;Compact&quot;],&quot;default&quot;:&quot;Confortable&quot;,&quot;tsType&quot;:&quot;'Confortable' | 'Compact'&quot;,&quot;section&quot;:&quot;Tableau&quot;}}">
+class Component extends DCLogic {
+  state = { data: null, err: false, dayIdx: 0, query: '', onlyRisk: false, panel: null, destSort: 'freq', showAllDest: false, showGone: false, clock: null, wx: {} };
+  heroCanvas = React.createRef();
+  trackRef = React.createRef();
+
+  componentDidMount() {
+    this.setState({ clock: this.parisNow() });
+    this.load();
+    this._clockT = setInterval(() => this.setState({ clock: this.parisNow() }), 10000);
+    this._loadT = setInterval(() => this.load(), 5 * 60 * 1000);
+    this._onRoute = e => e.detail && e.detail.iata && this.openDest(e.detail.iata);
+    document.addEventListener('routeselect', this._onRoute);
+    this._onKey = e => { if (e.key === 'Escape') this.setState({ panel: null }); };
+    document.addEventListener('keydown', this._onKey);
+    this._bodT = setInterval(() => { if (window.BOD) { clearInterval(this._bodT); this.forceUpdate(); this.loadPhotos(); } }, 100);
+    this.startFlow();
+  }
+  componentWillUnmount() {
+    [this._clockT, this._loadT, this._bodT].forEach(clearInterval);
+    cancelAnimationFrame(this._raf);
+    document.removeEventListener('routeselect', this._onRoute);
+    document.removeEventListener('keydown', this._onKey);
+    this._flowRO && this._flowRO.disconnect();
+    this._flowIO && this._flowIO.disconnect();
+  }
+  componentDidUpdate(_, prev) {
+    if ((!prev.data && this.state.data) || prev.dayIdx !== this.state.dayIdx) setTimeout(() => this.scrollToNow(), 60);
+  }
+  async load() {
+    try {
+      const r = await fetch('data/predictions.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      if (this.state.data && this.state.data.generated_at === d.generated_at) return;
+      this.setState({ data: d, err: false });
+    } catch (e) { if (!this.state.data) this.setState({ err: true }); }
+  }
+
+  // Photos libres : image principale de l'article Wikipédia (Wikimedia Commons), en un seul appel.
+  async loadPhotos() {
+    const W = (window.BOD && window.BOD.WIKI) || {};
+    const titles = [...new Set(Object.values(W))];
+    if (!titles.length) return;
+    try {
+      const url = 'https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=pageimages&piprop=thumbnail&pithumbsize=960&titles=' + encodeURIComponent(titles.join('|'));
+      const j = await (await fetch(url)).json();
+      const q = j.query || {};
+      const alias = {};
+      (q.normalized || []).concat(q.redirects || []).forEach(x => { alias[x.to] = alias[x.to] || []; alias[x.to].push(x.from); });
+      const byTitle = {};
+      Object.values(q.pages || {}).forEach(p => {
+        if (!p.thumbnail) return;
+        const names = [p.title, ...(alias[p.title] || [])];
+        (alias[p.title] || []).forEach(a => (alias[a] || []).forEach(b => names.push(b)));
+        names.forEach(n => { byTitle[n] = { src: p.thumbnail.source, href: 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.title.replace(/ /g, '_')) }; });
+      });
+      const photos = {};
+      Object.entries(W).forEach(([k, t]) => { if (byTitle[t]) photos[k] = byTitle[t]; });
+      this.setState({ photos });
+    } catch (e) { /* les emplacements restent en attente d'une photo */ }
+  }
+
+  // ── Temps ─────────────────────────────
+  parisNow() {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date()).map(x => [x.type, x.value]));
+    return { date: `${p.year}-${p.month}-${p.day}`, minutes: Number(p.hour) * 60 + Number(p.minute), hhmm: `${p.hour}:${p.minute}` };
+  }
+  parisDate(off) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date(Date.now() + off * 86400000)); }
+  toMin(hhmm) { const [h, m] = String(hhmm).split(':').map(Number); return h * 60 + m; }
+  frenchDate(iso) { return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(iso + 'T12:00:00Z')); }
+  cap(s) { return s ? s[0].toUpperCase() + s.slice(1) : s; }
+  tzOff(tz) {
+    const d = new Date();
+    return (new Date(d.toLocaleString('en-US', { timeZone: tz })) - new Date(d.toLocaleString('en-US', { timeZone: 'UTC' }))) / 60000;
+  }
+
+  // ── Vols (logique reprise de index.html) ──
+  hasNum(v) { return v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)); }
+  signed(n) { return (n > 0 ? '+' : '') + n; }
+  norm(s) { return String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').trim(); }
+  iata(f) { return f.destination_iata || (/malpensa/i.test(f.destination || '') ? 'MXP' : ''); }
+  destName(f) {
+    const B = window.BOD || { DEST: {}, NAMES: {} };
+    const k = this.iata(f);
+    if (B.DEST[k]) return B.DEST[k].name;
+    if (B.NAMES[k]) return B.NAMES[k];
+    const d = String(f.destination || '').replace(/airport|international|a[ée]roport|aeropuerto|flughafen/gi, '').replace(/\s+/g, ' ').trim();
+    return d || k || '—';
+  }
+  riskOf(f) {
+    return ({ green: { level: 1, word: 'Faible' }, yellow: { level: 2, word: 'Possible' }, orange: { level: 3, word: 'Probable' }, red: { level: 4, word: 'Très probable' } })[f.risk_level] || { level: 1, word: 'Faible' };
+  }
+  realGone(f) { return Boolean(f.atd) || /^d[ée]coll/i.test(f.airport_status || '') || f.status === 'landed'; }
+  // Données en retard sur l'horloge : un vol dont l'heure (prévue ou annoncée) est passée de 45 min sans confirmation est considéré parti.
+  isStale(f) {
+    const c = this._past;
+    if (!c || !c.live || f.date !== c.date || this.realGone(f) || this.isCancelled(f)) return false;
+    const ref = f.est_departure && /^\d\d:\d\d$/.test(f.est_departure) ? f.est_departure : f.std;
+    return this.toMin(ref) + 45 < c.nowMin;
+  }
+  isGone(f) { return this.realGone(f) || this.isStale(f); }
+  isCancelled(f) { return f.status === 'cancelled' || /annul/i.test(f.airport_status || ''); }
+  statusInfo(f) {
+    if (this.isCancelled(f)) return { text: 'Annulé', tone: 'cancel' };
+    if (f.atd) return { text: `Parti ${f.atd}${this.hasNum(f.delay_min) ? ' · ' + this.signed(Number(f.delay_min)) + ' min' : ''}`, tone: 'gone' };
+    if (this.realGone(f)) return { text: 'Décollé', tone: 'gone' };
+    if (this.isStale(f)) return { text: 'Départ non confirmé', tone: 'gone' };
+    if (f.est_departure) return { text: `Prévu ${f.est_departure}`, tone: 'warn' };
+    if (f.estimated_schedule) return { text: 'Estimé', tone: 'ok' };
+    const s = this.norm(f.airport_status);
+    if (s.startsWith('embarq')) return { text: 'Embarquement', tone: 'board' };
+    if (s.startsWith('ferme')) return { text: 'Porte fermée', tone: 'board' };
+    if (s.startsWith('retard')) return { text: 'Retardé', tone: 'warn' };
+    if (s.startsWith('enreg') && s.includes('termin')) return { text: 'Enreg. terminé', tone: 'ok' };
+    if (s.startsWith('enreg')) return { text: 'Enregistrement', tone: 'ok' };
+    return { text: "À l'heure", tone: 'ok' };
+  }
+  matches(f, q) {
+    if (!q) return true;
+    const B = window.BOD || { ALIASES: {} };
+    const qn = this.norm(q), compact = qn.replace(/ /g, '');
+    if (this.norm(f.flight_iata).replace(/ /g, '').includes(compact)) return true;
+    if (this.norm(this.destName(f)).includes(qn) || this.norm(f.destination).includes(qn)) return true;
+    if (this.iata(f).toLowerCase() === compact) return true;
+    const alias = B.ALIASES[qn.replace(/ /g, '_')];
+    return Boolean(alias && alias.includes(this.iata(f)));
+  }
+  levelColor(l) { return ['oklch(0.8 0.04 255)', 'oklch(0.8 0.04 255)', 'oklch(0.74 0.09 18)', 'oklch(0.63 0.14 18)', 'oklch(0.52 0.17 18)'][l] || 'oklch(0.8 0.04 255)'; }
+  avgLevel(p) { return p >= 60 ? 4 : p >= 45 ? 3 : p >= 30 ? 2 : 1; }
+  wmo(c) {
+    if (c === 0) return 'Ciel dégagé'; if (c <= 2) return 'Peu nuageux'; if (c === 3) return 'Couvert';
+    if (c <= 48) return 'Brouillard'; if (c <= 57) return 'Bruine'; if (c <= 67) return 'Pluie';
+    if (c <= 77) return 'Neige'; if (c <= 82) return 'Averses'; return 'Orage';
+  }
+
+  dayInfo() {
+    const fl = (this.state.data && this.state.data.flights) || [];
+    const dates = [...new Set(fl.map(f => f.date))].sort();
+    const today = this.parisDate(0);
+    const d0 = dates.includes(today) || !dates.length ? today : dates[0];
+    const d1 = dates.find(d => d > d0) || this.parisDate(1);
+    const gen = this.state.data ? String(this.state.data.generated_at) : '';
+    const clock = this.state.clock || this.parisNow();
+    const live = d0 === today;
+    this._past = { date: d0, live, nowMin: clock.minutes };
+    const genAge = live && gen.slice(0, 10) === today ? clock.minutes - this.toMin(gen.slice(11, 16)) : 0;
+    this._genAge = genAge;
+    return { fl, d0, d1, date: this.state.dayIdx ? d1 : d0, nowMin: live ? clock.minutes : (gen ? this.toMin(gen.slice(11, 16)) : 0), nowLabel: live ? clock.hhmm : gen.slice(11, 16) };
+  }
+
+  // ── Actions ───────────────────────────
+  openFlight(f) { this.setState({ panel: { type: 'flight', f } }); this.fetchWx(this.iata(f)); }
+  openDest(iata) { this.setState({ panel: { type: 'dest', iata } }); this.fetchWx(iata); }
+  async fetchWx(iata) {
+    const info = (window.BOD && window.BOD.DEST[iata]) || null;
+    if (!info || this.state.wx[iata]) return;
+    this.setState(s => ({ wx: { ...s.wx, [iata]: 'loading' } }));
+    try {
+      const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${info.lat}&longitude=${info.lon}&current=temperature_2m,weather_code,wind_speed_10m`);
+      const j = await r.json();
+      const c = j.current;
+      this.setState(s => ({ wx: { ...s.wx, [iata]: { t: Math.round(c.temperature_2m), label: this.wmo(c.weather_code), wind: Math.round(c.wind_speed_10m) } } }));
+    } catch (e) { this.setState(s => ({ wx: { ...s.wx, [iata]: 'err' } })); }
+  }
+  scrollToNow() {
+    const el = this.trackRef.current;
+    if (!el || this._nowX == null) return;
+    el.scrollTo({ left: Math.max(0, this._nowX - el.clientWidth * 0.3), behavior: 'smooth' });
+  }
+
+  // ── Fond animé : champ d'écoulement (vent sur Mérignac) ──
+  startFlow() {
+    const cv = this.heroCanvas.current; if (!cv) return;
+    const ctx = cv.getContext('2d');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    let W = 0, H = 0, parts = [], t = 0, visible = true;
+    const np = () => ({ x: Math.random() * W, y: Math.random() * H, life: 60 + Math.random() * 180, c: Math.random() < 0.2 ? 'rgba(46,98,206,0.42)' : 'rgba(20,24,36,0.17)' });
+    const size = () => {
+      const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+      if (!W || !H) return;
+      cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = '#F5F3EE'; ctx.fillRect(0, 0, W, H);
+      parts = Array.from({ length: Math.min(900, Math.round(W * H / 2200)) }, np);
+      if (reduce) for (let i = 0; i < 200; i++) step();
+    };
+    const field = (x, y) => { const s = 0.0021; return Math.sin(x * s + t * 0.18) * 1.1 + Math.cos(y * s * 1.5 - t * 0.12) * 0.9 + Math.sin((x + y) * s * 0.55 + t * 0.08) * 0.6; };
+    const step = () => {
+      const sp = 0.7 + (this._wind || 12) / 16;
+      ctx.fillStyle = 'rgba(245,243,238,0.07)'; ctx.fillRect(0, 0, W, H);
+      ctx.lineWidth = 1.1;
+      for (const p of parts) {
+        const a = field(p.x, p.y) * 0.85 - 0.2;
+        const nx = p.x + Math.cos(a) * sp, ny = p.y + Math.sin(a) * sp * 0.75;
+        ctx.strokeStyle = p.c; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(nx, ny); ctx.stroke();
+        p.x = nx; p.y = ny; p.life--;
+        if (p.life < 0 || nx < -5 || nx > W + 5 || ny < -5 || ny > H + 5) Object.assign(p, np());
+      }
+      t += 0.016;
+    };
+    const loop = () => {
+      cancelAnimationFrame(this._raf);
+      const f = () => { if (!visible) return; if (this.props.ambient !== false) step(); this._raf = requestAnimationFrame(f); };
+      f();
+    };
+    this._flowRO = new ResizeObserver(size); this._flowRO.observe(cv); size();
+    this._flowIO = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible && !reduce) loop(); });
+    this._flowIO.observe(cv);
+  }
+
+  renderVals() {
+    const B = window.BOD || { DEST: {}, NAMES: {}, ALIASES: {} };
+    const s = this.state;
+    const BLUE = 'oklch(0.52 0.15 255)', CLARET = 'oklch(0.52 0.17 18)';
+    const INK = '#141824', INK3 = '#8A8F9A';
+    const { fl, d0, d1, date, nowMin, nowLabel } = this.dayInfo();
+    const isToday = s.dayIdx === 0;
+    const all = fl.filter(f => f.date === date).sort((a, b) => a.std.localeCompare(b.std) || a.flight_iata.localeCompare(b.flight_iata));
+    const done = f => this.isGone(f) || this.isCancelled(f);
+    const liveAll = all.filter(f => !done(f));
+    const cur = fl.filter(f => f.date === d0).find(f => this.toMin(f.std) >= nowMin) || fl[0];
+    this._wind = cur ? Number(cur.weather_wind) || 12 : 12;
+
+    const TONES = {
+      ok: { bg: '#F0EEE9', ink: '#545A68', dot: '#A3A7AE' },
+      board: { bg: 'oklch(0.95 0.03 255)', ink: 'oklch(0.45 0.15 255)', dot: BLUE },
+      warn: { bg: 'oklch(0.95 0.03 18)', ink: 'oklch(0.47 0.17 18)', dot: CLARET },
+      gone: { bg: 'transparent', ink: '#6B7080', dot: '#CFCAC1' },
+      cancel: { bg: INK, ink: '#F5F3EE', dot: '#F5F3EE' },
+    };
+    const row = (f, i) => {
+      const r = this.riskOf(f), g = done(f), st = this.statusInfo(f), p = Math.round(f.probabilite_retard), tone = TONES[st.tone];
+      return {
+        std: f.std, flight: f.flight_iata, airline: f.airline, dest: this.destName(f),
+        pct: p + ' %', barW: p + '%', barColor: g ? '#CFCAC1' : this.levelColor(r.level), word: r.word,
+        status: st.text, stBg: tone.bg, stInk: tone.ink, stDot: tone.dot,
+        timeInk: g ? INK3 : INK, pctInk: g ? INK3 : r.level === 4 ? CLARET : INK,
+        edge: !g && r.level === 4 ? CLARET : 'transparent',
+        delay: Math.min(i, 16) * 40 + 'ms', open: () => this.openFlight(f),
+      };
+    };
+    const visible = all.filter(f => this.matches(f, s.query));
+    const live = visible.filter(f => !done(f) && (!s.onlyRisk || this.riskOf(f).level >= 3));
+    const gone = visible.filter(done);
+    const why = s.err ? ["Les prédictions n'ont pas pu être chargées.", 'Nouvel essai dans quelques minutes.']
+      : !s.data ? ['Chargement…', '']
+      : s.query ? ['Aucun vol ne correspond à cette recherche.', "Essayez une ville, un code d'aéroport ou un numéro de vol."]
+      : s.onlyRisk ? ['Aucun vol à risque élevé.', 'Tous les départs restants ont un risque faible ou modéré.']
+      : all.length ? ['Tous les vols de la journée sont partis.', "Le programme de demain est dans l'onglet Demain."]
+      : ['Pas encore de prédictions pour ce jour.', 'Elles apparaîtront au prochain passage de collecte.'];
+
+    // Frise
+    const HW = 64, BASE = 132;
+    const first = all.length ? Math.min(...all.map(f => this.toMin(f.std))) : 300;
+    const tStart = Math.floor(Math.min(first, 300) / 60) * 60;
+    const X = m => (Math.min(Math.max(m, tStart), 1440) - tStart) / 60 * HW + 20;
+    const trackWn = Math.round((1440 - tStart) / 60 * HW + 40);
+    const hours = [];
+    for (let h = tStart / 60; h <= 24; h++) hours.push({ left: X(h * 60) + 'px', label: String(h % 24).padStart(2, '0') + 'h' });
+    const per = {};
+    const ticks = all.map((f, i) => {
+      const m = this.toMin(f.std), n = per[m] = (per[m] || 0) + 1, p = f.probabilite_retard, r = this.riskOf(f);
+      return { left: (X(m) + (n - 1) * 8) + 'px', height: (8 + p * 1.0) + 'px', color: done(f) ? '#E2DED6' : this.levelColor(r.level), delay: Math.min(i, 60) * 12 + 'ms', title: `${f.std} · ${f.flight_iata} · ${this.destName(f)} · ${Math.round(p)} %`, open: () => this.openFlight(f) };
+    });
+    const pts = all.filter(f => !this.isCancelled(f)).map(f => [this.toMin(f.std), f.probabilite_retard]);
+    const segs = []; let seg = [];
+    for (let m = tStart; m <= 1440; m += 10) {
+      let sw = 0, sp = 0;
+      for (const [mm, p] of pts) { const w = Math.exp(-((m - mm) ** 2) / (2 * 40 * 40)); sw += w; sp += w * p; }
+      if (sw > 0.2) seg.push([X(m), BASE - (8 + sp / sw * 1.0)]);
+      else if (seg.length) { segs.push(seg); seg = []; }
+    }
+    if (seg.length) segs.push(seg);
+    const fmt = p => p[0].toFixed(1) + ' ' + p[1].toFixed(1);
+    const curvePath = segs.filter(g => g.length > 1).map(g => 'M' + g.map(fmt).join(' L')).join(' ');
+    const areaPath = segs.filter(g => g.length > 1).map(g => `M${g[0][0].toFixed(1)} ${BASE} L` + g.map(fmt).join(' L') + ` L${g[g.length - 1][0].toFixed(1)} ${BASE} Z`).join(' ');
+    const showNow = isToday && !!s.data && nowMin >= tStart && nowMin <= 1440;
+    this._nowX = showNow ? X(nowMin) : 0;
+
+    // Destinations
+    const agg = {};
+    fl.forEach(f => {
+      const k = this.iata(f); if (!k) return;
+      const a = agg[k] = agg[k] || { iata: k, n: 0, sum: 0, airlines: new Set(), name: this.destName(f), next: null, flights: [] };
+      a.n++; a.sum += f.probabilite_retard; a.airlines.add(f.airline); a.flights.push(f);
+      if (f.date === d0 && !done(f) && this.toMin(f.std) >= nowMin && (!a.next || f.std < a.next)) a.next = f.std;
+    });
+    const durMin = d => { const m = /(\d+)h(\d+)/.exec(d || ''); return m ? Number(m[1]) * 60 + Number(m[2]) : 0; };
+    let destAll = Object.values(agg).map(a => {
+      const info = B.DEST[a.iata] || {}, avg = Math.round(a.sum / a.n), lvl = this.avgLevel(avg);
+      return { iata: a.iata, name: info.name || a.name, country: info.country || '—', dur: info.dur ? '≈ ' + info.dur : '', durM: durMin(info.dur), n: a.n, avg, lvl, color: this.levelColor(lvl), lat: info.lat, lon: info.lon, far: !!info.far, airlines: [...a.airlines].join(' · '), next: a.next ? "Prochain départ " + a.next : 'Prochain départ demain' };
+    });
+    const sorters = { freq: (a, b) => b.n - a.n || a.avg - b.avg, punct: (a, b) => a.avg - b.avg || b.n - a.n, far: (a, b) => b.durM - a.durM };
+    destAll.sort(sorters[s.destSort]);
+    const dests = (s.showAllDest ? destAll : destAll.slice(0, 8)).map((d, i) => ({
+      ...d, nLabel: d.n + (d.n > 1 ? ' départs' : ' départ') + ' sur 48 h', avgLabel: d.avg + ' %', barW: d.avg + '%',
+      placeholder: 'Photo · ' + d.name, photo: ((s.photos || {})[d.iata] || {}).src || '', photoHref: ((s.photos || {})[d.iata] || {}).href || '', photoCredit: (s.photos || {})[d.iata] ? 'Wikimedia Commons' : '', delay: (i % 8) * 50 + 'ms', open: () => this.openDest(d.iata),
+    }));
+    const sortOpt = (k, label) => ({ label, bg: s.destSort === k ? '#FFFFFF' : 'transparent', ink: s.destSort === k ? INK : '#545A68', sh: s.destSort === k ? '0 1px 3px rgba(20,24,36,0.1)' : 'none', pick: () => this.setState({ destSort: k }) });
+    const routesJson = JSON.stringify(destAll.filter(d => Number.isFinite(d.lat)).map(d => ({ iata: d.iata, name: d.name, lat: d.lat, lon: d.lon, n: d.n, avg: d.avg, color: d.color, far: d.far })));
+    const farList = destAll.filter(d => d.far).map(d => ({ name: d.name, dur: d.dur, color: d.color, open: () => this.openDest(d.iata) }));
+
+    // Panneau
+    const P = s.panel;
+    let pv = { pOpen: false, pIsFlight: false, pHasNote: false, gHasTip: false, gHasFlights: false, gIata: 'none' };
+    if (P) {
+      const f = P.type === 'flight' ? P.f : null;
+      const k = f ? this.iata(f) : P.iata;
+      const info = B.DEST[k] || {};
+      const name = f ? this.destName(f) : (info.name || (agg[k] && agg[k].name) || k);
+      const wx = s.wx[k];
+      let gDiff = '';
+      if (info.tz) {
+        const dh = Math.round((this.tzOff(info.tz) - this.tzOff('Europe/Paris')) / 60);
+        gDiff = dh === 0 ? "Même heure qu'à Bordeaux" : `${dh > 0 ? '+' : '−'}${Math.abs(dh)} h par rapport à Bordeaux`;
+      }
+      const list = (agg[k] ? agg[k].flights : []).filter(x => !done(x) && x !== f && (x.date !== d0 || this.toMin(x.std) >= nowMin))
+        .sort((a, b) => a.date.localeCompare(b.date) || a.std.localeCompare(b.std)).slice(0, 6);
+      pv = {
+        pOpen: true, pIsFlight: !!f, gIata: k || 'none', gName: name, gPlaceholder: 'Photo · ' + name,
+        gPhoto: ((s.photos || {})[k] || {}).src || '', gPhotoHref: ((s.photos || {})[k] || {}).href || '', gPhotoCredit: (s.photos || {})[k] ? 'Wikimedia Commons' : '',
+        gLocal: info.tz ? new Intl.DateTimeFormat('fr-FR', { timeZone: info.tz, hour: '2-digit', minute: '2-digit' }).format(new Date()) : '—',
+        gDiff: gDiff || 'Fuseau inconnu',
+        gWxT: wx && wx.t !== undefined ? wx.t + ' °C' : wx === 'loading' ? '…' : '—',
+        gWxL: wx && wx.t !== undefined ? `${wx.label} · vent ${wx.wind} km/h` : wx === 'loading' ? 'Chargement' : 'Indisponible',
+        gDur: info.dur ? '≈ ' + info.dur : '—',
+        gSch: info.sch === undefined ? '—' : info.sch ? 'Espace Schengen' : 'Hors Schengen',
+        gSchSub: info.sch === undefined ? '' : info.sch ? "Carte d'identité ou passeport" : 'Contrôle des passeports : prévoyez de la marge',
+        gHasTip: !!info.tip, gTip: info.tip || '',
+        gHasFlights: list.length > 0, gFlightsTitle: f ? `Autres vols vers ${name}` : `Prochains vols vers ${name}`,
+        gFlights: list.map(x => { const p = Math.round(x.probabilite_retard); return { std: x.std, day: x.date === d0 ? "Aujourd'hui" : this.cap(this.frenchDate(x.date)), flight: x.flight_iata, airline: x.airline, pct: p + ' %', ink: this.riskOf(x).level === 4 ? CLARET : INK, open: () => this.openFlight(x) }; }),
+      };
+      if (f) {
+        const r = this.riskOf(f), p = Math.round(f.probabilite_retard);
+        let note = '', warm = false;
+        if (this.isCancelled(f)) note = "Vol annoncé annulé par l'aéroport.";
+        else if (f.atd && this.hasNum(f.delay_min)) {
+          const d = Number(f.delay_min), late = d >= 15, said = p >= 50; warm = late;
+          note = `Parti à ${f.atd}, ${d > 0 ? `avec ${d} min de retard` : d < 0 ? `${-d} min en avance` : "à l'heure"}. Le modèle donnait ${p} % de risque : ${late === said ? 'prédiction confirmée.' : 'prédiction démentie.'}`;
+        } else if (this.isStale(f)) note = `L'heure de départ est passée, mais les données datent de ${String(s.data.generated_at).slice(11, 16)} : départ pas encore confirmé. Mise à jour au prochain passage.`;
+        else if (this.isGone(f)) note = "Décollé. L'heure exacte de départ sera connue ce soir.";
+        else if (this.hasNum(f.announced_delay) && Number(f.announced_delay) !== 0) { warm = true; note = `L'aéroport annonce un départ à ${f.est_departure}, soit ${this.signed(Number(f.announced_delay))} min.`; }
+        else if (f.estimated_schedule) note = "Programme estimé : ce vol a décollé le même jour la semaine dernière. L'aéroport le confirmera demain matin.";
+        const TYPE = { 'J-1': 'la veille du vol', 'Jour J': 'le jour du vol', 'T-2h': 'moins de 2 h 30 avant le départ', 'Annonce': "d'après l'annonce de l'aéroport" };
+        const facts = [];
+        if (this.hasNum(f.avg_delay_flight)) facts.push({ k: 'Retard moyen de ce vol', v: Math.round(f.avg_delay_flight) + ' min' });
+        if (this.hasNum(f.avg_delay_airline)) facts.push({ k: 'Retard moyen ' + f.airline, v: Math.round(f.avg_delay_airline) + ' min' });
+        const w = [f.weather_label, this.hasNum(f.weather_temp) ? Math.round(f.weather_temp) + ' °C' : '', this.hasNum(f.weather_wind) ? 'vent ' + Math.round(f.weather_wind) + ' km/h' : '', this.hasNum(f.weather_precip) && Number(f.weather_precip) > 0 ? Number(f.weather_precip) + ' mm' : ''].filter(Boolean).join(', ');
+        if (w) facts.push({ k: 'Météo prévue à Bordeaux', v: w });
+        facts.push({ k: 'Prédiction faite', v: `${String(f.predicted_at).slice(11, 16)}, ${TYPE[f.prediction_type] || ''}` });
+        Object.assign(pv, {
+          pKicker: `${f.flight_iata} · ${f.airline}`, pTitle: name, pSub: this.cap(this.frenchDate(f.date)) + ' · ' + this.statusInfo(f).text,
+          pPct: p + ' %', pPctInk: r.level === 4 ? CLARET : INK, pTime: f.std, pBarW: p + '%', pBarColor: this.levelColor(r.level), pWord: r.word,
+          pHasNote: !!note, pNote: note, pNoteBg: warm ? 'oklch(0.95 0.03 18)' : '#EFECE6', pNoteInk: warm ? 'oklch(0.4 0.15 18)' : '#545A68',
+          pFacts: facts,
+        });
+      } else {
+        const a = agg[k];
+        Object.assign(pv, {
+          pKicker: `${k} · ${info.country || ''}`, pTitle: name,
+          pSub: a ? `${a.n} départ${a.n > 1 ? 's' : ''} sur 48 h · risque moyen ${Math.round(a.sum / a.n)} % · ${[...a.airlines].join(', ')}` : '',
+        });
+      }
+    }
+
+    const gen = s.data ? String(s.data.generated_at).slice(11, 16) : '—';
+    const wxNow = cur ? [cur.weather_label, this.hasNum(cur.weather_temp) ? Math.round(cur.weather_temp) + ' °C' : '', this.hasNum(cur.weather_wind) ? 'vent ' + Math.round(cur.weather_wind) + ' km/h' : ''].filter(Boolean).join(' · ') : '—';
+    const auc = s.data && s.data.model && s.data.model.auc;
+    const pad3 = n => String(n).padStart(2, '0');
+    const dense = this.props.density === 'Compact';
+
+    return {
+      heroCanvas: this.heroCanvas, trackRef: this.trackRef,
+      canvasDisplay: this.props.ambient === false ? 'none' : 'block',
+      clock: (s.clock && s.clock.hhmm) || '--:--',
+      genTime: this._genAge > 90 ? `${gen} · il y a ${Math.floor(this._genAge / 60)} h${String(this._genAge % 60).padStart(2, '0')}` : gen,
+      genInk: this._genAge > 90 ? CLARET : INK, wxNow,
+      query: s.query, hasQuery: !!s.query,
+      onQuery: e => this.setState({ query: e.target.value }),
+      clearQuery: e => { e.preventDefault(); this.setState({ query: '' }); },
+      setDay0: () => this.setState({ dayIdx: 0 }), setDay1: () => this.setState({ dayIdx: 1 }),
+      day0Bg: isToday ? '#FFFFFF' : 'transparent', day0Ink: isToday ? INK : '#545A68', day0Sh: isToday ? '0 1px 3px rgba(20,24,36,0.12)' : 'none',
+      day1Bg: !isToday ? '#FFFFFF' : 'transparent', day1Ink: !isToday ? INK : '#545A68', day1Sh: !isToday ? '0 1px 3px rgba(20,24,36,0.12)' : 'none',
+      cUpcoming: pad3(liveAll.length), cRisk: pad3(liveAll.filter(f => this.riskOf(f).level >= 3).length),
+      cAnnounced: pad3(liveAll.filter(f => this.hasNum(f.announced_delay) && f.announced_delay >= 5).length), cGone: pad3(all.filter(this.isGone.bind(this)).length),
+      trackW: trackWn + 'px', trackWn, hours, ticks, curvePath, areaPath, showNow, nowLeft: this._nowX + 'px',
+      boardTitle: isToday ? 'Prochains départs' : 'Départs de demain',
+      boardSub: s.data ? `${this.cap(this.frenchDate(date))} · ${live.length} vol${live.length > 1 ? 's' : ''}${all.some(f => f.estimated_schedule) ? " · programme estimé d'après la semaine dernière" : ''}` : 'Chargement…',
+      toggleRisk: () => this.setState({ onlyRisk: !s.onlyRisk }), onlyRiskStr: String(s.onlyRisk),
+      riskBtnBg: s.onlyRisk ? 'oklch(0.95 0.03 18)' : 'transparent', riskBtnInk: s.onlyRisk ? 'oklch(0.45 0.17 18)' : '#545A68', riskBtnLine: s.onlyRisk ? CLARET : '#D4CFC5',
+      rows: live.map(row), isEmpty: live.length === 0, emptyTitle: why[0], emptyText: why[1],
+      rowPad: dense ? '10px' : '16px',
+      hasGone: gone.length > 0, showGone: s.showGone, goneRows: gone.map(row), goneRot: s.showGone ? 'rotate(45deg)' : 'none',
+      goneLabel: `Vols partis (${gone.length}) · prédiction et retard réel`, toggleGone: () => this.setState({ showGone: !s.showGone }),
+      destSub: `${destAll.length} destinations desservies sur les prochaines 48 h. Touchez une carte pour l'heure locale, la météo sur place et les prochains vols.`,
+      sorts: [sortOpt('freq', 'Plus desservies'), sortOpt('punct', 'Plus ponctuelles'), sortOpt('far', 'Plus lointaines')],
+      dests, moreDest: destAll.length > 8, moreLabel: s.showAllDest ? 'Réduire' : `Voir les ${destAll.length} destinations`,
+      toggleAllDest: () => this.setState({ showAllDest: !s.showAllDest }),
+      routesJson, selIata: P ? (P.type === 'flight' ? this.iata(P.f) : P.iata) : '', hasFar: farList.length > 0, farList,
+      modelNote: auc ? `Prédictions issues d'une forêt aléatoire entraînée sur l'historique des départs de Bordeaux depuis avril 2026. Testée sur les quatre dernières semaines, elle place un vol qui sera en retard au-dessus d'un vol à l'heure dans ${Math.round(auc * 100)} % des cas.` : "Prédictions issues d'un modèle d'apprentissage automatique (forêt aléatoire) entraîné sur l'historique des départs de Bordeaux depuis avril 2026.",
+      closePanel: () => this.setState({ panel: null }),
+      scrimOp: P ? 1 : 0, scrimPE: P ? 'auto' : 'none',
+      drawerT: P ? 'translateX(0)' : 'translateX(calc(100% + 32px))', drawerVis: P ? 'visible' : 'hidden',
+      ...pv,
+    };
+  }
 }
 
-function closeDrawer() {
-  const drawer = document.getElementById('drawer');
-  if (!drawer.classList.contains('open')) return;
-  drawer.classList.remove('open');
-  document.getElementById('scrim').classList.remove('open');
-  drawer._opener?.focus?.();
-}
-
-// ══════════════════════════════════════════
-// Interactions
-// ══════════════════════════════════════════
-document.getElementById('scrim').onclick = closeDrawer;
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
-
-const searchBox = document.getElementById('search-box');
-const search = document.getElementById('search');
-search.addEventListener('input', () => {
-  state.query = search.value.trim();
-  searchBox.classList.toggle('has-value', Boolean(state.query));
-  if (state.data) renderBoard(dayFlights());
-});
-document.getElementById('search-clear').onclick = e => {
-  e.preventDefault();
-  search.value = '';
-  search.dispatchEvent(new Event('input'));
-  search.focus();
-};
-
-document.querySelectorAll('.segmented button').forEach(btn => btn.addEventListener('click', () => {
-  state.day = Number(btn.dataset.day);
-  document.querySelectorAll('.segmented button').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
-  document.getElementById('rows').replaceChildren();
-  document.getElementById('rows-gone').replaceChildren();
-  if (state.data) render();
-}));
-
-document.getElementById('only-risk').addEventListener('click', e => {
-  state.onlyRisk = !state.onlyRisk;
-  e.currentTarget.setAttribute('aria-pressed', String(state.onlyRisk));
-  if (state.data) renderBoard(dayFlights());
-});
-
-// Changement de mise en page (mobile / bureau) : on reconstruit frise et tableau.
-let lastWidth = window.innerWidth;
-window.addEventListener('resize', () => {
-  const crossed = w => [w < 640, w < 760].join();
-  if (crossed(lastWidth) === crossed(window.innerWidth)) return;
-  lastWidth = window.innerWidth;
-  document.getElementById('track').removeAttribute('data-built');
-  document.getElementById('rows').replaceChildren();
-  document.getElementById('rows-gone').replaceChildren();
-  if (state.data) render();
-});
-
-// Horloge : la palette bascule quand la minute change.
-function tick() {
-  setFlap(document.getElementById('clock'), parisNow().hhmm, 5);
-  updateNow(false);
-}
-
-setFlap(document.getElementById('brand-flap'), 'BOD', 3, 200);
-tick();
-setInterval(tick, 10000);
-load();
-setInterval(load, REFRESH_MS);
 </script>
 </body>
 </html>
