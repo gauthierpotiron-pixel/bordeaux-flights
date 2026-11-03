@@ -14707,12 +14707,12 @@ date,flight_iata,flight_icao,airline,destination,destination_iata,std,atd,delay_
 2026-11-03,AF7439,,Air France,Charles De Gaulle,CDG,18:25,,,,scheduled,,,,Non,8.9,0.0,14.5,15.8,43500.0,3,Nuageux,Non,mardi,1,2026-11-03|18:25|CDG,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
 2026-11-03,AF6137,,Air France,St-Exupéry,LYS,18:30,,,,scheduled,,,,Non,8.9,0.0,14.5,15.8,43500.0,3,Nuageux,Non,mardi,1,2026-11-03|18:30|LYS,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
 2026-11-03,VY8123,,Vueling,El Prat De Llobregat,BCN,18:30,,,,scheduled,IB5463|QR3705,,,Non,8.9,0.0,14.5,15.8,43500.0,3,Nuageux,Non,mardi,1,2026-11-03|18:30|BCN,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
-2026-11-03,AT799,,Royal Air Maroc,Mohamed V,CMN,19:00,,,,scheduled,,,,Oui,7.1,0.0,6.9,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:00|CMN,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
-2026-11-03,W46200,,Wizz Air,Leonardo Da Vinci (Fiumicino),FCO,19:00,,,,scheduled,,,,Non,7.1,0.0,6.9,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:00|FCO,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Prévu à 20:55,20:55
-2026-11-03,EC1807,,easyJet,Marseille Provence Airport,MRS,19:10,,,,scheduled,,,,Non,7.1,0.0,6.9,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:10|MRS,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
-2026-11-03,EC2978,,easyJet,Leonardo Da Vinci (Fiumicino),FCO,20:15,,,,scheduled,,,,Non,5.8,0.0,5.5,7.9,40200.0,51,Pluie,Non,mardi,1,2026-11-03|20:15|FCO,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Prévu à 20:25,20:25
-2026-11-03,AF7441,,Air France,Charles De Gaulle,CDG,20:35,,,,scheduled,,,,Non,5.8,0.0,5.5,7.9,40200.0,51,Pluie,Non,mardi,1,2026-11-03|20:35|CDG,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
-2026-11-03,EC1620,,easyJet,Cote D'azur International Airport,NCE,21:05,,,,scheduled,,,,Non,4.4,0.0,5.0,6.5,40200.0,3,Nuageux,Non,mardi,1,2026-11-03|21:05|NCE,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
-2026-11-03,BJ719,,Nouvelair,Carthage,TUN,21:35,,,,scheduled,,,,Oui,4.4,0.0,5.0,6.5,40200.0,3,Nuageux,Non,mardi,1,2026-11-03|21:35|TUN,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
-2026-11-03,DS1470,,easyJet,Geneve-cointrin,GVA,21:35,,,,scheduled,,,,Non,4.4,0.0,5.0,6.5,40200.0,3,Nuageux,Non,mardi,1,2026-11-03|21:35|GVA,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,,
-2026-11-03,EC4314,,easyJet,St-Exupéry,LYS,21:40,,,,scheduled,,,,Non,4.4,0.0,5.0,6.5,40200.0,3,Nuageux,Non,mardi,1,2026-11-03|21:40|LYS,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,,
+2026-11-03,AT799,,Royal Air Maroc,Mohamed V,CMN,19:00,,,,scheduled,,,,Oui,7.9,0.0,12.5,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:00|CMN,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
+2026-11-03,W46200,,Wizz Air,Leonardo Da Vinci (Fiumicino),FCO,19:00,,,,scheduled,,,,Non,7.9,0.0,12.5,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:00|FCO,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Prévu à 20:55,20:55
+2026-11-03,EC1807,,easyJet,Marseille Provence Airport,MRS,19:10,,,,scheduled,,,,Non,7.9,0.0,12.5,12.6,43500.0,51,Pluie,Non,mardi,1,2026-11-03|19:10|MRS,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Décollé,
+2026-11-03,EC2978,,easyJet,Leonardo Da Vinci (Fiumicino),FCO,20:15,,,,scheduled,,,,Non,7.5,0.1,12.9,15.5,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|20:15|FCO,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Prévu à 20:25,20:25
+2026-11-03,AF7441,,Air France,Charles De Gaulle,CDG,20:35,,,,scheduled,,,,Non,7.5,0.1,12.9,15.5,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|20:35|CDG,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
+2026-11-03,EC1620,,easyJet,Cote D'azur International Airport,NCE,21:05,,,,scheduled,,,,Non,6.8,0.0,12.1,15.1,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|21:05|NCE,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
+2026-11-03,BJ719,,Nouvelair,Carthage,TUN,21:35,,,,scheduled,,,,Oui,6.8,0.0,12.1,15.1,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|21:35|TUN,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,Enregistrement,
+2026-11-03,DS1470,,easyJet,Geneve-cointrin,GVA,21:35,,,,scheduled,,,,Non,6.8,0.0,12.1,15.1,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|21:35|GVA,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,,
+2026-11-03,EC4314,,easyJet,St-Exupéry,LYS,21:40,,,,scheduled,,,,Non,6.8,0.0,12.1,15.1,40200.0,2,Nuageux,Non,mardi,1,2026-11-03|21:40|LYS,1,2,2026-11-03 11:53:58,2026-11-03 19:27:28,,
