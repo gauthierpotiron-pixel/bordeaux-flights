@@ -1,8 +1,8 @@
 {
- "generated_at": "2026-11-12 02:32",
+ "generated_at": "2026-11-12 03:30",
  "model": {
-  "auc": 0.671,
-  "evaluated_on": "2026-10-13 → 2026-11-10",
+  "auc": 0.673,
+  "evaluated_on": "2026-10-14 → 2026-11-11",
   "threshold_min": 15
  },
  "flights": [
@@ -21,16 +21,16 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.3,
-   "weather_wind": 12.6,
-   "weather_precip": 0.3,
+   "weather_temp": 14.4,
+   "weather_wind": 11.5,
+   "weather_precip": 0.38,
    "avg_delay_flight": 9.4,
    "avg_delay_airline": 20.8,
-   "probabilite_retard": 22.1,
+   "probabilite_retard": 21.4,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
-   "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "prediction_type": "T-2h",
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -47,16 +47,16 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.3,
-   "weather_wind": 12.6,
-   "weather_precip": 0.3,
-   "avg_delay_flight": 13.3,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 18.9,
+   "weather_temp": 14.4,
+   "weather_wind": 11.5,
+   "weather_precip": 0.38,
+   "avg_delay_flight": 13.2,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 16.6,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -73,11 +73,11 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.3,
-   "weather_wind": 12.6,
-   "weather_precip": 0.3,
+   "weather_temp": 14.4,
+   "weather_wind": 11.5,
+   "weather_precip": 0.38,
    "avg_delay_flight": 4.4,
-   "avg_delay_airline": 12.9,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 14.1,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -99,9 +99,9 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.3,
-   "weather_wind": 12.6,
-   "weather_precip": 0.3,
+   "weather_temp": 14.4,
+   "weather_wind": 11.5,
+   "weather_precip": 0.38,
    "avg_delay_flight": 33.2,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 45.5,
@@ -126,8 +126,8 @@
    "estimated_schedule": false,
    "weather_label": "Pluie",
    "weather_temp": 14.3,
-   "weather_wind": 11.3,
-   "weather_precip": 1.08,
+   "weather_wind": 12.8,
+   "weather_precip": 1.25,
    "avg_delay_flight": 8.2,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 13.2,
@@ -152,8 +152,8 @@
    "estimated_schedule": false,
    "weather_label": "Pluie",
    "weather_temp": 14.3,
-   "weather_wind": 11.3,
-   "weather_precip": 1.08,
+   "weather_wind": 12.8,
+   "weather_precip": 1.25,
    "avg_delay_flight": 10.9,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 14.2,
@@ -161,6 +161,32 @@
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
    "predicted_at": "2026-11-12 02:32"
+  },
+  {
+   "date": "2026-11-12",
+   "flight_iata": "V7834",
+   "airline": "Volotea",
+   "destination": "Bellegarde",
+   "destination_iata": "LIG",
+   "std": "08:00",
+   "status": "scheduled",
+   "atd": "",
+   "delay_min": "",
+   "airport_status": "",
+   "est_departure": "",
+   "announced_delay": null,
+   "estimated_schedule": false,
+   "weather_label": "Pluie",
+   "weather_temp": 14.2,
+   "weather_wind": 11.0,
+   "weather_precip": 5.5,
+   "avg_delay_flight": null,
+   "avg_delay_airline": 14.5,
+   "probabilite_retard": 38.1,
+   "risk_level": "yellow",
+   "label_retard": "Retard possible",
+   "prediction_type": "Jour J",
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -177,16 +203,16 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.1,
-   "weather_wind": 11.7,
-   "weather_precip": 2.5,
+   "weather_temp": 14.2,
+   "weather_wind": 11.0,
+   "weather_precip": 5.5,
    "avg_delay_flight": 17.2,
    "avg_delay_airline": 14.5,
-   "probabilite_retard": 33.8,
+   "probabilite_retard": 31.1,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -203,16 +229,16 @@
    "announced_delay": null,
    "estimated_schedule": false,
    "weather_label": "Pluie",
-   "weather_temp": 14.1,
-   "weather_wind": 11.7,
-   "weather_precip": 2.5,
-   "avg_delay_flight": 7.1,
+   "weather_temp": 14.2,
+   "weather_wind": 11.0,
+   "weather_precip": 5.5,
+   "avg_delay_flight": 7.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 11.5,
+   "probabilite_retard": 13.1,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -234,11 +260,11 @@
    "weather_precip": 1.7,
    "avg_delay_flight": 26.3,
    "avg_delay_airline": 20.1,
-   "probabilite_retard": 58.6,
+   "probabilite_retard": 61.3,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -260,11 +286,11 @@
    "weather_precip": 1.7,
    "avg_delay_flight": 13.6,
    "avg_delay_airline": 18.4,
-   "probabilite_retard": 28.0,
+   "probabilite_retard": 30.0,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -286,11 +312,11 @@
    "weather_precip": 1.7,
    "avg_delay_flight": 3.4,
    "avg_delay_airline": 12.4,
-   "probabilite_retard": 14.4,
+   "probabilite_retard": 16.1,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -312,11 +338,11 @@
    "weather_precip": 0.2,
    "avg_delay_flight": 18.1,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 35.2,
-   "risk_level": "yellow",
-   "label_retard": "Retard possible",
+   "probabilite_retard": 33.9,
+   "risk_level": "green",
+   "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -336,8 +362,8 @@
    "weather_temp": 14.6,
    "weather_wind": 8.6,
    "weather_precip": 0.2,
-   "avg_delay_flight": 11.1,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 11.0,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 23.9,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -364,11 +390,11 @@
    "weather_precip": 0.2,
    "avg_delay_flight": 27.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 39.7,
+   "probabilite_retard": 38.0,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -415,7 +441,7 @@
    "weather_wind": 8.6,
    "weather_precip": 0.2,
    "avg_delay_flight": 2.7,
-   "avg_delay_airline": 12.9,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 12.6,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -467,12 +493,12 @@
    "weather_wind": 10.3,
    "weather_precip": 0.2,
    "avg_delay_flight": 21.3,
-   "avg_delay_airline": 21.9,
-   "probabilite_retard": 52.0,
+   "avg_delay_airline": 22.0,
+   "probabilite_retard": 51.0,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -492,8 +518,8 @@
    "weather_temp": 14.7,
    "weather_wind": 10.3,
    "weather_precip": 0.2,
-   "avg_delay_flight": 20.2,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 20.1,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 40.5,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
@@ -520,11 +546,11 @@
    "weather_precip": 0.3,
    "avg_delay_flight": 18.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 35.4,
-   "risk_level": "yellow",
-   "label_retard": "Retard possible",
+   "probabilite_retard": 34.1,
+   "risk_level": "green",
+   "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -546,11 +572,11 @@
    "weather_precip": 0.3,
    "avg_delay_flight": 22.1,
    "avg_delay_airline": 20.8,
-   "probabilite_retard": 56.4,
+   "probabilite_retard": 57.7,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -572,11 +598,11 @@
    "weather_precip": 0.4,
    "avg_delay_flight": 11.0,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 37.3,
-   "risk_level": "yellow",
-   "label_retard": "Retard possible",
+   "probabilite_retard": 34.7,
+   "risk_level": "green",
+   "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -597,7 +623,7 @@
    "weather_wind": 14.9,
    "weather_precip": 0.4,
    "avg_delay_flight": 7.9,
-   "avg_delay_airline": 12.9,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 25.4,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -622,7 +648,7 @@
    "weather_temp": 14.3,
    "weather_wind": 14.9,
    "weather_precip": 0.4,
-   "avg_delay_flight": 3.4,
+   "avg_delay_flight": 3.6,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 23.6,
    "risk_level": "green",
@@ -648,13 +674,13 @@
    "weather_temp": 14.3,
    "weather_wind": 13.8,
    "weather_precip": 0.4,
-   "avg_delay_flight": 21.1,
+   "avg_delay_flight": 21.5,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 41.3,
+   "probabilite_retard": 43.1,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -702,11 +728,11 @@
    "weather_precip": 0.4,
    "avg_delay_flight": 38.3,
    "avg_delay_airline": 28.2,
-   "probabilite_retard": 60.8,
+   "probabilite_retard": 63.1,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -726,13 +752,13 @@
    "weather_temp": 14.3,
    "weather_wind": 13.8,
    "weather_precip": 0.4,
-   "avg_delay_flight": 17.5,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 31.3,
+   "avg_delay_flight": 17.4,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 32.4,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -754,11 +780,11 @@
    "weather_precip": 3.6,
    "avg_delay_flight": 21.2,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 47.6,
+   "probabilite_retard": 48.8,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -806,11 +832,11 @@
    "weather_precip": 3.6,
    "avg_delay_flight": 23.7,
    "avg_delay_airline": 18.4,
-   "probabilite_retard": 63.3,
+   "probabilite_retard": 61.9,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -830,13 +856,13 @@
    "weather_temp": 13.2,
    "weather_wind": 17.1,
    "weather_precip": 2.0,
-   "avg_delay_flight": 12.1,
+   "avg_delay_flight": 11.8,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 40.4,
+   "probabilite_retard": 39.0,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -856,7 +882,7 @@
    "weather_temp": 13.2,
    "weather_wind": 17.1,
    "weather_precip": 2.0,
-   "avg_delay_flight": 15.0,
+   "avg_delay_flight": 13.5,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 41.2,
    "risk_level": "yellow",
@@ -883,12 +909,12 @@
    "weather_wind": 17.1,
    "weather_precip": 2.0,
    "avg_delay_flight": 8.3,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 34.9,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 33.4,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -909,12 +935,12 @@
    "weather_wind": 17.1,
    "weather_precip": 2.0,
    "avg_delay_flight": 6.9,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 24.8,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 26.5,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -961,12 +987,12 @@
    "weather_wind": 17.1,
    "weather_precip": 2.0,
    "avg_delay_flight": 8.0,
-   "avg_delay_airline": 16.5,
-   "probabilite_retard": 42.4,
+   "avg_delay_airline": 16.6,
+   "probabilite_retard": 41.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -1013,7 +1039,7 @@
    "weather_wind": 14.8,
    "weather_precip": 0.6,
    "avg_delay_flight": 18.5,
-   "avg_delay_airline": 21.0,
+   "avg_delay_airline": 20.9,
    "probabilite_retard": 49.5,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
@@ -1040,11 +1066,11 @@
    "weather_precip": 0.6,
    "avg_delay_flight": 18.3,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 36.6,
+   "probabilite_retard": 38.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -1064,8 +1090,8 @@
    "weather_temp": 12.5,
    "weather_wind": 15.1,
    "weather_precip": 1.2,
-   "avg_delay_flight": 11.3,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 11.1,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 20.2,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -1091,7 +1117,7 @@
    "weather_wind": 14.8,
    "weather_precip": 1.1,
    "avg_delay_flight": 13.5,
-   "avg_delay_airline": 21.0,
+   "avg_delay_airline": 20.9,
    "probabilite_retard": 38.2,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
@@ -1142,13 +1168,13 @@
    "weather_temp": 11.7,
    "weather_wind": 15.2,
    "weather_precip": 0.3,
-   "avg_delay_flight": 11.9,
+   "avg_delay_flight": 11.6,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 32.2,
+   "probabilite_retard": 31.0,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-12",
@@ -1196,11 +1222,11 @@
    "weather_precip": 0.3,
    "avg_delay_flight": 18.6,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 40.9,
+   "probabilite_retard": 42.6,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "Jour J",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1248,11 +1274,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 9.4,
    "avg_delay_airline": 20.8,
-   "probabilite_retard": 22.8,
+   "probabilite_retard": 21.5,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1272,13 +1298,13 @@
    "weather_temp": 8.1,
    "weather_wind": 13.0,
    "weather_precip": 0.0,
-   "avg_delay_flight": 13.3,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 19.5,
+   "avg_delay_flight": 13.2,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 17.3,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1352,11 +1378,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 36.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 43.0,
+   "probabilite_retard": 44.2,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1428,13 +1454,13 @@
    "weather_temp": 7.6,
    "weather_wind": 12.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 12.0,
+   "avg_delay_flight": 10.2,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 32.9,
+   "probabilite_retard": 26.9,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1456,11 +1482,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 13.6,
    "avg_delay_airline": 18.4,
-   "probabilite_retard": 30.8,
+   "probabilite_retard": 33.6,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1480,13 +1506,13 @@
    "weather_temp": 7.6,
    "weather_wind": 12.7,
    "weather_precip": 0.0,
-   "avg_delay_flight": 7.1,
+   "avg_delay_flight": 7.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 10.2,
+   "probabilite_retard": 11.2,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1508,11 +1534,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 21.2,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 40.8,
+   "probabilite_retard": 42.0,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1558,8 +1584,8 @@
    "weather_temp": 8.2,
    "weather_wind": 14.4,
    "weather_precip": 0.0,
-   "avg_delay_flight": 11.1,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 11.0,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 27.0,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -1586,11 +1612,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 26.2,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 44.2,
+   "probabilite_retard": 42.4,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1611,12 +1637,12 @@
    "weather_wind": 14.4,
    "weather_precip": 0.0,
    "avg_delay_flight": 16.5,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 35.2,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 36.5,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1636,7 +1662,7 @@
    "weather_temp": 8.2,
    "weather_wind": 14.4,
    "weather_precip": 0.0,
-   "avg_delay_flight": 3.4,
+   "avg_delay_flight": 3.6,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 27.4,
    "risk_level": "green",
@@ -1664,11 +1690,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 22.1,
    "avg_delay_airline": 22.5,
-   "probabilite_retard": 64.8,
+   "probabilite_retard": 62.8,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1714,13 +1740,13 @@
    "weather_temp": 8.9,
    "weather_wind": 14.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 10.2,
+   "avg_delay_flight": 10.7,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 34.4,
-   "risk_level": "green",
-   "label_retard": "Faible risque de retard",
+   "probabilite_retard": 36.9,
+   "risk_level": "yellow",
+   "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1740,13 +1766,13 @@
    "weather_temp": 8.9,
    "weather_wind": 14.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 23.1,
-   "avg_delay_airline": 21.0,
-   "probabilite_retard": 66.7,
-   "risk_level": "red",
-   "label_retard": "Retard très probable",
+   "avg_delay_flight": 23.0,
+   "avg_delay_airline": 20.9,
+   "probabilite_retard": 62.4,
+   "risk_level": "orange",
+   "label_retard": "Retard probable",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1766,8 +1792,8 @@
    "weather_temp": 8.9,
    "weather_wind": 14.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 20.2,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 20.1,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 41.1,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
@@ -1794,11 +1820,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 8.5,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 31.7,
+   "probabilite_retard": 33.7,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1846,11 +1872,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 24.0,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 46.2,
+   "probabilite_retard": 44.5,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1872,11 +1898,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 25.9,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 44.7,
+   "probabilite_retard": 42.7,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1898,11 +1924,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 27.4,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 59.0,
+   "probabilite_retard": 56.5,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -1923,12 +1949,12 @@
    "weather_wind": 13.2,
    "weather_precip": 0.0,
    "avg_delay_flight": 7.9,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 30.4,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 29.0,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2000,13 +2026,13 @@
    "weather_temp": 11.7,
    "weather_wind": 13.8,
    "weather_precip": 0.0,
-   "avg_delay_flight": 17.5,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 33.3,
+   "avg_delay_flight": 17.4,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 34.4,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2026,13 +2052,13 @@
    "weather_temp": 11.7,
    "weather_wind": 13.8,
    "weather_precip": 0.0,
-   "avg_delay_flight": 12.1,
+   "avg_delay_flight": 11.8,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 37.9,
+   "probabilite_retard": 36.9,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2052,7 +2078,7 @@
    "weather_temp": 11.6,
    "weather_wind": 14.0,
    "weather_precip": 0.0,
-   "avg_delay_flight": 12.1,
+   "avg_delay_flight": 11.8,
    "avg_delay_airline": 19.8,
    "probabilite_retard": 40.5,
    "risk_level": "yellow",
@@ -2078,13 +2104,13 @@
    "weather_temp": 11.6,
    "weather_wind": 14.0,
    "weather_precip": 0.0,
-   "avg_delay_flight": 21.1,
+   "avg_delay_flight": 21.5,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 43.0,
+   "probabilite_retard": 45.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2106,11 +2132,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 14.8,
    "avg_delay_airline": 14.5,
-   "probabilite_retard": 35.2,
+   "probabilite_retard": 37.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2132,11 +2158,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 18.1,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 45.5,
+   "probabilite_retard": 41.7,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2158,11 +2184,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 16.6,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 44.4,
+   "probabilite_retard": 43.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2184,11 +2210,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 18.0,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 40.6,
+   "probabilite_retard": 39.4,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2236,11 +2262,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 23.7,
    "avg_delay_airline": 18.4,
-   "probabilite_retard": 61.3,
+   "probabilite_retard": 63.1,
    "risk_level": "orange",
    "label_retard": "Retard probable",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2260,8 +2286,8 @@
    "weather_temp": 9.0,
    "weather_wind": 12.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 22.1,
-   "avg_delay_airline": 21.9,
+   "avg_delay_flight": 22.2,
+   "avg_delay_airline": 22.0,
    "probabilite_retard": 64.2,
    "risk_level": "orange",
    "label_retard": "Retard probable",
@@ -2287,12 +2313,12 @@
    "weather_wind": 12.2,
    "weather_precip": 0.0,
    "avg_delay_flight": 8.3,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 42.2,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 37.3,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2313,12 +2339,12 @@
    "weather_wind": 12.2,
    "weather_precip": 0.0,
    "avg_delay_flight": 6.9,
-   "avg_delay_airline": 12.9,
-   "probabilite_retard": 27.7,
+   "avg_delay_airline": 12.8,
+   "probabilite_retard": 26.6,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2340,11 +2366,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 11.5,
    "avg_delay_airline": 12.4,
-   "probabilite_retard": 35.4,
+   "probabilite_retard": 36.6,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2392,11 +2418,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 27.0,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 43.7,
+   "probabilite_retard": 42.6,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2416,13 +2442,13 @@
    "weather_temp": 5.9,
    "weather_wind": 10.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 11.9,
+   "avg_delay_flight": 11.6,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 24.7,
+   "probabilite_retard": 25.9,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2444,11 +2470,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 29.0,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 47.2,
+   "probabilite_retard": 40.8,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2494,8 +2520,8 @@
    "weather_temp": 5.9,
    "weather_wind": 10.2,
    "weather_precip": 0.0,
-   "avg_delay_flight": 11.3,
-   "avg_delay_airline": 12.9,
+   "avg_delay_flight": 11.1,
+   "avg_delay_airline": 12.8,
    "probabilite_retard": 24.8,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
@@ -2521,12 +2547,12 @@
    "weather_wind": 10.2,
    "weather_precip": 0.0,
    "avg_delay_flight": 8.0,
-   "avg_delay_airline": 16.5,
-   "probabilite_retard": 28.0,
+   "avg_delay_airline": 16.6,
+   "probabilite_retard": 29.5,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2574,11 +2600,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": null,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 46.1,
+   "probabilite_retard": 43.4,
    "risk_level": "yellow",
    "label_retard": "Retard possible",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2626,11 +2652,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 5.5,
    "avg_delay_airline": 19.8,
-   "probabilite_retard": 29.3,
+   "probabilite_retard": 31.0,
    "risk_level": "green",
    "label_retard": "Faible risque de retard",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   },
   {
    "date": "2026-11-13",
@@ -2678,11 +2704,11 @@
    "weather_precip": 0.0,
    "avg_delay_flight": 64.6,
    "avg_delay_airline": 53.1,
-   "probabilite_retard": 66.7,
+   "probabilite_retard": 65.6,
    "risk_level": "red",
    "label_retard": "Retard très probable",
    "prediction_type": "J-1",
-   "predicted_at": "2026-11-12 02:32"
+   "predicted_at": "2026-11-12 03:30"
   }
  ]
 }
