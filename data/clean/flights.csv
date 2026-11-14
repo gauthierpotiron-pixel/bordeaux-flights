@@ -15402,5 +15402,5 @@ date,flight_iata,flight_icao,airline,destination,destination_iata,std,atd,delay_
 2026-11-14,VY8121,VLG8121,Vueling,El Prat De Llobregat,BCN,08:15,,,,scheduled,IB5461|LA5798|LL5461|QR3703,,,Non,3.8,0.0,9.8,15.1,33480.0,3,Nuageux,Non,samedi,1,2026-11-14|08:15|BCN,1,1,2026-11-14 02:44:40,2026-11-14 02:44:40,,
 2026-11-14,W46770,WMT6770,Wizz Air,Marco Polo,VCE,08:45,,,,scheduled,,,,Non,3.8,0.0,9.8,15.1,33480.0,3,Nuageux,Non,samedi,1,2026-11-14|08:45|VCE,1,1,2026-11-14 02:44:40,2026-11-14 02:44:40,,
 2026-11-14,YW1200,ANE1200,Iberia,Barajas,MAD,09:05,,,,scheduled,AA8830|AA8830|AY4772|AY4772|CX1835|CX1835|LA1796|LA1796|QR7241|QR7241|VY5511|VY5511,,,Non,4.9,0.0,12.3,15.1,33480.0,3,Nuageux,Non,samedi,1,2026-11-14|09:05|MAD,1,1,2026-11-14 02:44:40,2026-11-14 02:44:40,,
-2026-11-14,EC2978,,easyJet,Leonardo Da Vinci (Fiumicino),FCO,20:15,,,,scheduled,,,,Non,11.6,0.0,9.1,11.9,25820.0,3,Nuageux,Non,samedi,1,2026-11-14|20:15|FCO,1,1,2026-11-14 01:20:39,2026-11-14 01:20:39,,
-2026-11-14,EC6004,,easyJet,Menara,RAK,20:30,,,,scheduled,,,,Oui,11.6,0.0,9.1,11.9,25820.0,3,Nuageux,Non,samedi,1,2026-11-14|20:30|RAK,1,1,2026-11-14 01:20:39,2026-11-14 01:20:39,,
+2026-11-14,EC2978,,easyJet,Leonardo Da Vinci (Fiumicino),FCO,20:15,,,,scheduled,,,,Non,10.9,0.0,11.2,15.5,32900.0,3,Nuageux,Non,samedi,1,2026-11-14|20:15|FCO,1,1,2026-11-14 01:20:39,2026-11-14 01:20:39,,
+2026-11-14,EC6004,,easyJet,Menara,RAK,20:30,,,,scheduled,,,,Oui,10.9,0.0,11.2,15.5,32900.0,3,Nuageux,Non,samedi,1,2026-11-14|20:30|RAK,1,1,2026-11-14 01:20:39,2026-11-14 01:20:39,,
